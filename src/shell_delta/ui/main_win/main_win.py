@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QApplication
 
 from shell_delta import gb_var as gb_var_script
-from shell_delta.render import time_map
+from shell_delta.gb_var import TimeMap as time_map
 from shell_delta.utils.editing_utils import EditingUtils
 from shell_delta.ui.main_win.main_win_ui import MainWinUIMixin
 from shell_delta.ui.main_win.main_win_io import MainWinIOMixin

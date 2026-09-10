@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from shell_delta import gb_var as gb_var_script
-from shell_delta.render import time_map
+from shell_delta.gb_var import TimeMap as time_map
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()

@@ -10,7 +10,7 @@ from PySide6.QtOpenGL import (
 )
 from OpenGL import GL
 
-from shell_delta.render import time_map
+from shell_delta.gb_var import TimeMap as time_map
 from shell_delta import gb_var as gb_var_script
 from shell_delta.utils.editing_utils import EditingUtils
 
@@ -102,10 +102,6 @@ class OpenGLImageWidget(QOpenGLWidget):
             self.texture = [texture]
 
     def _load_textures(self, paths) -> list[QOpenGLTexture]:
-        import time
-        ts = time.time()
-        print("[")
-
         if self.texture:
             for i in range(0, len(self.texture)):
                 self.texture[i].destroy()

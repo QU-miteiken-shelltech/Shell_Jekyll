@@ -4,7 +4,6 @@ from typing import Optional, Dict, Any
 
 import numpy
 
-from shell_delta.render import time_map
 from shell_delta.style import (
     dark_default, pure_skyblue,
     kawaii_pink, elegant_light
@@ -19,6 +18,9 @@ style_script: Any = dark_default
 
 IS_CONFIGED: bool = False
 MAX_LAYER: int = 8
+
+class TimeMap:
+    time_map: list[dict[int, int]] = []
 
 @dataclass
 class GBVar:
@@ -80,8 +82,8 @@ class GBVar:
                     self, name, 
                     numpy.array(val, dtype=object)[self.layer_order[:len(val)]].tolist()
                 )
-        current_time_map = time_map.time_map
-        time_map.time_map = numpy.array(current_time_map, dtype=object)[self.layer_order[:len(current_time_map)]].tolist()
+        current_time_map = TimeMap.time_map
+        TimeMap.time_map = numpy.array(current_time_map, dtype=object)[self.layer_order[:len(current_time_map)]].tolist()
         get_gbvar_ctx().switch_layer(new_active_layer=new_active_layer, do_write_back=False)
         from dataclasses import asdict; print(asdict(self))
 

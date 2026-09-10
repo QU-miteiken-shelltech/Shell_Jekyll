@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QLabel, QCompleter
 )
 from shell_delta.ui.expression_editor import ExpressionEditor
-from shell_delta.render import time_map
+from shell_delta.gb_var import TimeMap as time_map
 from shell_delta.expression.tcl_engine import TCLEngine
 from shell_delta.expression.cel_engine import CELEngine
 from shell_delta.io.io_sdproj import IO_sdproj

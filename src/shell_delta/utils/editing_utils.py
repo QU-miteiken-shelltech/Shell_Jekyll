@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from shell_delta.render import time_map
+from shell_delta.gb_var import TimeMap as time_map
 from shell_delta import gb_var as gb_var_script
 
 gb_var = gb_var_script.get_gbvar_ctx()

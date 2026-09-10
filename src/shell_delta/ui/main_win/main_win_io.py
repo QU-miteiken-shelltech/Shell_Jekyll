@@ -6,7 +6,7 @@ from PySide6.QtCore import QUrl, Qt
 from PySide6.QtWidgets import QFileDialog
 import cv2
 
-from shell_delta.render import time_map
+from shell_delta.gb_var import TimeMap as time_map
 from shell_delta.io.io_sdproj import IO_sdproj
 from shell_delta.expression.tcl_engine import TCLEngine
 from shell_delta.utils.editing_utils import EditingUtils

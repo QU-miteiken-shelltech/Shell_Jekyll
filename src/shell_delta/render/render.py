@@ -2,7 +2,7 @@ from pathlib import Path
 
 import cv2
 
-from shell_delta.render import time_map
+from shell_delta.gb_var import TimeMap as time_map
 from shell_delta.utils.editing_utils import EditingUtils
 from shell_delta import gb_var as gb_var_script
 
