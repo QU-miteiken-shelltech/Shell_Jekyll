@@ -32,6 +32,8 @@ class GBVar:
     ref_video_start: int = 0
     layer_order: list[int] = field(default_factory=list)
 
+    layer_visibility : list[int] = field(default_factory=list)
+
     _instance: Optional["GBVar"] = None
 
     @classmethod
@@ -60,6 +62,8 @@ class GBVar:
         if callable(attr):
             return attr
         if not IS_CONFIGED:
+            if name in ["layer_visibility"]:
+                return [1] * MAX_LAYER
             raise KeyError(f"Unconfiged yet: cannot access '{name}'")
         
         return attr

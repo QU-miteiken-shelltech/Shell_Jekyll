@@ -16,10 +16,6 @@ class MainWinEventsMixin:
                       is_increment: bool=True,
                       increment_step: int=1
                       ):
-        import time
-        ts = time.time()
-        print("-------------------------")
-        print(f"CKPT1 : {time.time() - ts}")
         if not gb_var_full.mata_filename:
             return
         self.inputting = False
@@ -28,8 +24,6 @@ class MainWinEventsMixin:
             self.seq_idx += increment_step if is_foward else -increment_step
         else:
             self.seq_idx = int(self.current_frame_label.text())
-
-        print(f"CKPT2 : {time.time() - ts}")
 
         if self.is_on_main_window:
             new_image_paths = []
@@ -43,20 +37,12 @@ class MainWinEventsMixin:
                     new_image_path = str(Path(__file__).resolve().parents[2] / "_resources" / "fallback.png")
                 new_image_paths.append(str(new_image_path))
 
-            print(f"CKPT3 : {time.time() - ts}")
-
             seq = time_map.time_map[gb_var.active_layer][actual_img_idx]
             self.current_frame_label.setText(str(self.seq_idx))
-
-            print(f"CKPT4 : {time.time() - ts}")
 
             self.gl_widget.change_image(
                 new_image_paths=new_image_paths
             )
-
-            print(f"CKPT5 : {time.time() - ts}")
-            print("-------------------------")
-
         else:
             self.ref_seq_idx_label.setText(str(self.ref_seq_idx))
             actual_filename = EditingUtils.get_actual_filepath(img_idx=self.ref_seq_idx, layer=gb_var.active_layer)

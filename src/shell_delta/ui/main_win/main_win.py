@@ -120,10 +120,11 @@ class MainUserUi(QWidget,
                         new_active_layer=selected_item_idx - 1
                     )
                     self.layer_list.setCurrentRow(selected_item_idx - 1)
-                    self.gl_widget.texture = numpy.array(
-                        self.gl_widget.texture, dtype=object
-                    )[gb_var_full.layer_order[:len(self.gl_widget.texture)]].tolist()
-                    self.gl_widget.update()
+                    # self.gl_widget.texture = numpy.array(
+                    #     self.gl_widget.texture, dtype=object
+                    # )[gb_var_full.layer_order[:len(self.gl_widget.texture)]].tolist()
+                    # self.gl_widget.update()
+                    self.move_sequence(increment_step=0)
                 elif pressed == Qt.Key.Key_D:
                     if selected_item_idx >= self.layer_list.count() - 1:
                         return
@@ -137,10 +138,11 @@ class MainUserUi(QWidget,
                         new_active_layer=selected_item_idx + 1
                     )
                     self.layer_list.setCurrentRow(selected_item_idx + 1)
-                    self.gl_widget.texture = numpy.array(
-                        self.gl_widget.texture, dtype=object
-                    )[gb_var_full.layer_order[:len(self.gl_widget.texture)]].tolist()
-                    self.gl_widget.update()
+                    # self.gl_widget.texture = numpy.array(
+                    #     self.gl_widget.texture, dtype=object
+                    # )[gb_var_full.layer_order[:len(self.gl_widget.texture)]].tolist()
+                    # self.gl_widget.update()
+                    self.move_sequence(increment_step=0)
             else:
                 if pressed == Qt.Key.Key_U:
                     if selected_item_idx <= 0:
@@ -168,9 +170,11 @@ class MainUserUi(QWidget,
                         target_layer=selected_item_idx,
                         mode=1
                     )
+                self.move_sequence(increment_step=0)
 
             if pressed == Qt.Key.Key_S:
                 self.gl_widget.switch_size_standard(new_idx=selected_item_idx)
+                self.move_sequence(increment_step=0)
             
 
     def mouseMoveEvent(self, event):

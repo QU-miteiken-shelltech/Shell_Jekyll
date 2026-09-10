@@ -105,14 +105,11 @@ class OpenGLImageWidget(QOpenGLWidget):
         import time
         ts = time.time()
         print("[")
-        print(f"TEXCKPT1 : {time.time() - ts}")
 
         if self.texture:
             for i in range(0, len(self.texture)):
                 self.texture[i].destroy()
             self.texture = []
-
-        print(f"TEXCKPT2 : {time.time() - ts}")
 
         textures = []
         self.image_path = paths
@@ -127,33 +124,20 @@ class OpenGLImageWidget(QOpenGLWidget):
             texture.setMagnificationFilter(QOpenGLTexture.Filter.Linear)
             textures.append(texture)
 
-        print(f"TEXCKPT3 : {time.time() - ts}")
-        print("]")
         return textures
 
     def change_image(self, 
                      new_image_paths: list[str] | list[Path]
                      ) -> None:
-        import time
-        ts = time.time()
-        print("(")
-        print(f"GLCKPT1 : {time.time() - ts}")
-
         if self.ram_img_buffer:
             self.change_image_onram(next_image_paths=new_image_paths)
             return
         new_image_paths = [str(x) for x in new_image_paths]
-        print(f"GLCKPT2 : {time.time() - ts}")
         self.makeCurrent()
-        print(f"GLCKPT3 : {time.time() - ts}")
         self.texture = self._load_textures(paths=new_image_paths)
-        print(f"GLCKPT4 : {time.time() - ts}")
         self.resizeGL(self.width(), self.height())
-        print(f"GLCKPT5 : {time.time() - ts}")
         self.doneCurrent()
         self.update()       
-        print(f"GLCKPT6 : {time.time() - ts}") 
-        print(")")
 
     def send_img_to_buffer(self):
         if self.ram_img_buffer:
