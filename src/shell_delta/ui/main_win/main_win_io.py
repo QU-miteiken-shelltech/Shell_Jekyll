@@ -151,10 +151,12 @@ class MainWinIOMixin:
             time_map.time_map[len(gb_var_full.first_sequence_idx) - 1][num] = num
             
         self.seq_idx = first_sequence_idx
-        base_frame_list = EditingUtils.get_base_frames(layer=len(gb_var_full.first_sequence_idx) - 1)
-        gb_var_full.append_info(
-            new_info={"base_frame_list" : base_frame_list}
-        )
+        layer=len(gb_var_full.first_sequence_idx) - 1
+        base_frame_list = EditingUtils.get_base_frames(layer=layer)
+        if len(gb_var_full.base_frame_list) >= layer + 1:
+            gb_var_full.base_frame_list[layer] = base_frame_list
+        else:
+            gb_var_full.base_frame_list.append(base_frame_list)
             
         gb_var.switch_layer(new_active_layer=len(gb_var_full.first_sequence_idx) - 1)
 
@@ -176,6 +178,8 @@ class MainWinIOMixin:
         self.current_actual_img_idx_label.setText(str(self.seq_idx))
         self.current_frame_label.setText(str(first_sequence_idx))
         self.layer_list.addItem(str(self.layer_list.count()))
+        appended_item = self.layer_list.item(self.layer_list.count() - 1)
+        appended_item.setFlags(appended_item.flags() | Qt.ItemIsEditable)
 
 
     def open_reference(self):

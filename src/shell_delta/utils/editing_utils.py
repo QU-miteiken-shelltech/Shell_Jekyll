@@ -43,7 +43,6 @@ class EditingUtils:
         template = gb_var_full.mata_filename[layer]
         placeholder_template = re.sub(r"#+", "___DIGIT_PLACEHOLDER___", template)
         escaped_template = re.escape(placeholder_template)
-        escaped_template = re.escape(gb_var_full.mata_filename[layer])
         regex_pattern = escaped_template.replace("___DIGIT_PLACEHOLDER___", r"(\d+)")
         compiled_regex = re.compile(f"^{regex_pattern}$")
         glob_pattern = re.sub(r"#+", "*", gb_var_full.mata_filename[layer])

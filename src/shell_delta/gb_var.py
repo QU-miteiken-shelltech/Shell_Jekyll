@@ -142,6 +142,8 @@ class GBVar_CTX:
         if do_write_back:
             self.write_to_main(active_layer=self.active_layer)
         self.active_layer = new_active_layer
+        print(f"newactivelayer : {new_active_layer}")
+        from dataclasses import asdict; print(f"gbvar full : {asdict(gbvar)}")
         self.base_frame_list = gbvar.base_frame_list[new_active_layer]
         self.sequence_root_dir = gbvar.sequence_root_dir[new_active_layer]
         self.mata_filename = gbvar.mata_filename[new_active_layer]

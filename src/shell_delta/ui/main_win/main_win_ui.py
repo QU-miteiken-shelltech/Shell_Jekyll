@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QPushButton, 
     QLabel, QLineEdit, QComboBox, 
-    QStackedWidget, QListWidget
+    QStackedWidget
 )
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
@@ -58,7 +58,7 @@ class MainWinUIMixin:
         graphics_lo = QHBoxLayout()
 
         self.layer_list = LayerListWidget()
-        self.layer_list.setFixedWidth(30)
+        self.layer_list.setFixedWidth(65)
         self.layer_list.currentItemChanged.connect(self.switch_active_layer)
         graphics_lo.addWidget(self.layer_list)
 

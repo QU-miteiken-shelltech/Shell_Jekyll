@@ -136,6 +136,9 @@ class CELExpressionWidget(QWidget):
         cel_engine = CELEngine(
             cel_expression=self.cel_input.text().strip()
         )
+        print(gb_var.base_frame_list)
+        from dataclasses import asdict
+        print(asdict(gb_var))
         for frame in range(from_frame, to_frame+1):
             cel_rtn = cel_engine.run_cel(
                 data={
