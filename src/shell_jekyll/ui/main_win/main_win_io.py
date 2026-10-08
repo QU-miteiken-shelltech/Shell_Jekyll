@@ -1,194 +1,53 @@
-import re
-from pathlib import Path
-from dataclasses import dataclass, asdict
-
-from PySide6.QtCore import QUrl, Qt
 from PySide6.QtWidgets import QFileDialog
-import cv2
 
-from shell_jekyll.gb_var import TimeMap as time_map
-from shell_jekyll.io.io_sjproj import IO_sjproj
-from shell_jekyll.expression.tcl_engine import TCLEngine
-from shell_jekyll.utils.editing_utils import EditingUtils
-from shell_jekyll import gb_var as gb_var_script
-
-gb_var = gb_var_script.get_gbvar_ctx()
-gb_var_full = gb_var_script.get_gbvar_full()
-
-MAX_LAYER = 8
 
 class MainWinIOMixin:
+    """File dialogs only; opening / saving is done by ``ShellJekyll`` (``self.sj``)."""
 
     def _show_expression_panel(self):
+        """Reveal the expression panel and fill the proc list.  [Changed] The proc list comes from ``ShellJekyll.get_tcl_procs`` (which no longer lets a missing Tk / broken script abort loading)."""
         self.expression_widgets.show()
         self.expression_lang_combo.show()
         self.tcl_widget.command_func_combo.clear()
-        self.tcl_widget.command_func_combo.addItems(TCLEngine().get_procs())
+        self.tcl_widget.command_func_combo.addItems(self.sj.get_tcl_procs())
 
     def read_proj(self):
+        """[Changed] Dialog only; loading is ``ShellJekyll.read_proj`` and the widgets follow its events (see ``MainWinEventsMixin``)."""
         filename, _ = QFileDialog.getOpenFileName(self, "Open Sequence", "", "Shell Jekyll proj. (*.sjproj)")
         if not filename:
             return
-        IO_sjproj.load_sjproj(reading_path=filename)
-        self.seq_idx = 1
-        if not gb_var_full.mata_filename:
-            return
-        self.inputting = False
-        new_image_paths = []
-        for l in range(0, len(gb_var_full.first_sequence_idx)):
-            actual_img_idx = EditingUtils.get_actual_img_idx(seq_idx=self.seq_idx, layer=l)
-            actual_filename = EditingUtils.get_actual_filepath(img_idx=actual_img_idx, layer=l)
-            self.current_actual_img_idx_label.setText(str(actual_img_idx))
-            new_image_path = gb_var_full.sequence_root_dir[l] / actual_filename
-            if not new_image_path.exists():
-                new_image_path = str(Path(__file__).resolve().parents[2] / "_resources" / "fallback.png")
-            new_image_paths.append(str(new_image_path))
-        self.current_frame_label.setText(str(self.seq_idx))
-        self.gl_widget.change_image(
-            new_image_paths=new_image_paths
-            )
-
-        actual_img_idx = EditingUtils.get_actual_img_idx(seq_idx=self.seq_idx, layer=0)
-        actual_filename = EditingUtils.get_actual_filepath(img_idx=actual_img_idx, layer=0)
-        new_image_path = gb_var.sequence_root_dir / actual_filename
-        if not new_image_path.exists():
-            new_image_path = str(Path(__file__).resolve().parents[2] / "_resources" / "fallback.png")
-        self.ref_gl_widget.change_image(
-            new_image_path=new_image_path
-        )
-
-        self.current_opened_label.setText(
-            f"Working Sequence : {gb_var.sequence_root_dir / gb_var.mata_filename}"
-        )
-        self.ref_player.setSource(QUrl.fromLocalFile(str(gb_var.ref_path)))
-        cv2_videocap = cv2.VideoCapture(str(gb_var.ref_path))
-        self.ref_fps = cv2_videocap.get(cv2.CAP_PROP_FPS) if cv2_videocap.isOpened() else 0.0
-        cv2_videocap.release()
-        self.fps_input_field.setText(str(self.ref_fps))
-        self._show_expression_panel()
-
-        self.layer_list.clear()
-        self.layer_list.addItems([str(i) for i in gb_var_full.layer_order[0 : len(gb_var_full.first_sequence_idx)]])
-        self.layer_list.setCurrentRow(0)
-        for i in range(0, self.layer_list.count()):
-            item = self.layer_list.item(i)
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
+        self._set_inputting(False)
+        self.sj.read_proj(filename)
 
     def save_proj(self):
-        if gb_var.saving_path is None:
-            filename, _ = QFileDialog.getOpenFileName(self, "Open Sequence", "", "Shell Jekyll proj. (*.sjproj)")
+        """Save the project; ask for a file only if it has none yet.
+
+        [Changed] The "ask for a file" case used ``getOpenFileName``, which can
+        only pick an EXISTING file, so a new project could never be saved.
+        It is ``getSaveFileName`` now.  Saving with nothing loaded does nothing
+        (the old code raised ``KeyError``).
+        """
+        if not self.sj.has_sequence():
+            return
+        filename = None
+        if self.sj.saving_path is None:
+            filename, _ = QFileDialog.getSaveFileName(self, "Save Project", "", "Shell Jekyll proj. (*.sjproj)")
             if not filename:
                 return
-        else:
-            filename = str(gb_var.saving_path)
-        active_layer = gb_var.active_layer
-        gb_var.write_to_main(active_layer=active_layer)
-        writing_info = {
-            "base_frame_list" : [EditingUtils.get_base_frames(layer=l) for l in range(0, len(gb_var_full.first_sequence_idx))],
-            "time_map" : time_map.time_map,
-            "sequence_root_dir" : [str(x) for x in gb_var_full.sequence_root_dir],
-            "mata_filename" : gb_var_full.mata_filename,
-            "first_sequence_idx" : gb_var_full.first_sequence_idx,
-            "frame_notation_len" : gb_var_full.frame_notation_len,
-            "ref_video_start": gb_var_full.ref_video_start,
-            "ref_path" : str(gb_var_full.ref_path),
-            "layer_order" : [int(i) for i in gb_var_full.layer_order]
-        }
-        IO_sjproj.write_sjproj(
-            saving_path=filename,
-            writing_info=writing_info
-        )
-        self._show_expression_panel()
+        self.sj.save_proj(filename)
 
     def open_sequence(self):
+        """[Changed] Dialog only; the work is ``ShellJekyll.open_sequence`` (see its docstring for the fixes)."""
         filename, _ = QFileDialog.getOpenFileName(self, "Open Sequence", "", "PNG (*.png)")
 
         if not filename:
             return
-
-
-        sequence_root_dir = Path(filename).resolve().parent
-        matches = re.findall(r'\d+', Path(filename).name)
-        if len(matches) != 1:
-            return
-        first_sequence_idx = int(matches[0])
-        frame_notation_len = len(matches[0])
-        sharps = '#' * frame_notation_len
-        mata_filename = re.sub(r'\d+', sharps, Path(filename).name)
-
-        if gb_var_script.IS_CONFIGED:
-            info = {
-                "sequence_root_dir" : sequence_root_dir,
-                "mata_filename" : mata_filename,
-                "first_sequence_idx" : first_sequence_idx,
-                "frame_notation_len" : frame_notation_len
-            }
-            gb_var_full.append_info(new_info=info)
-        else:
-            data = {
-                "base_frame_list" : [[]],
-                "sequence_root_dir" : [sequence_root_dir],
-                "mata_filename" : [mata_filename],
-                "first_sequence_idx" : [first_sequence_idx],
-                "frame_notation_len" : [frame_notation_len],
-                "ref_video_start" : 0,
-                "ref_path" : None,
-                "saving_path" : None,
-                "layer_order" : [i for i in range(0, MAX_LAYER)]
-            }
-            gb_var_full.initialize(init_data=data)
-
-        parts = [re.escape(p) for p in mata_filename.split(sharps)]
-        regex_pattern = "^" + r"(\d+)".join(parts) + "$"
-        numbers = [
-            m.group(1)
-            for item in sequence_root_dir.iterdir()
-            if item.is_file() and (m := re.match(regex_pattern, item.name))
-        ]
-        time_map.time_map.append({})
-        for num in numbers:
-            num = int(num)
-            time_map.time_map[len(gb_var_full.first_sequence_idx) - 1][num] = num
-            
-        self.seq_idx = first_sequence_idx
-        layer=len(gb_var_full.first_sequence_idx) - 1
-        base_frame_list = EditingUtils.get_base_frames(layer=layer)
-        if len(gb_var_full.base_frame_list) >= layer + 1:
-            gb_var_full.base_frame_list[layer] = base_frame_list
-        else:
-            gb_var_full.base_frame_list.append(base_frame_list)
-            
-        gb_var.switch_layer(new_active_layer=len(gb_var_full.first_sequence_idx) - 1)
-
-        new_image_paths = []
-        for l in range(0, len(gb_var_full.first_sequence_idx)):
-            actual_img_idx = EditingUtils.get_actual_img_idx(seq_idx=self.seq_idx, layer=l)
-            actual_filename = EditingUtils.get_actual_filepath(img_idx=actual_img_idx, layer=l)
-            new_image_path = gb_var_full.sequence_root_dir[l] / actual_filename
-            if not new_image_path.exists():
-                new_image_path = str(Path(__file__).resolve().parents[2] / "_resources" / "fallback.png")
-            new_image_paths.append(str(new_image_path))
-        self.seq_idx = actual_img_idx
-
-        self.gl_widget.change_image(new_image_paths=new_image_paths)
-        self.ref_gl_widget.change_image(new_image_path=filename)
-        self.current_opened_label.setText(
-            f"Working Sequence : {sequence_root_dir / mata_filename}"
-            )
-        self.current_actual_img_idx_label.setText(str(self.seq_idx))
-        self.current_frame_label.setText(str(first_sequence_idx))
-        self.layer_list.addItem(str(self.layer_list.count()))
-        appended_item = self.layer_list.item(self.layer_list.count() - 1)
-        appended_item.setFlags(appended_item.flags() | Qt.ItemIsEditable)
-
+        self._set_inputting(False)
+        self.sj.open_sequence(filename)
 
     def open_reference(self):
+        """[Changed] Dialog only; the work is ``ShellJekyll.open_reference``."""
         filename, _ = QFileDialog.getOpenFileName(self, "Open Sequence", "", "Video (*.mp4)")
         if not filename:
             return
-        self.ref_player.setSource(QUrl.fromLocalFile(filename))
-        gb_var.ref_path = filename
-        cv2_videocap = cv2.VideoCapture(filename)
-        self.ref_fps = cv2_videocap.get(cv2.CAP_PROP_FPS) if cv2_videocap.isOpened() else 0.0
-        cv2_videocap.release()
-        self.fps_input_field.setText(str(self.ref_fps))
+        self.sj.open_reference(filename)

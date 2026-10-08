@@ -1,9 +1,7 @@
-from pathlib import Path
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QVBoxLayout, QHBoxLayout, QPushButton, 
-    QLabel, QLineEdit, QComboBox, 
+    QVBoxLayout, QHBoxLayout, QPushButton,
+    QLabel, QLineEdit, QComboBox,
     QStackedWidget
 )
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
@@ -15,14 +13,19 @@ from shell_jekyll.ui.opengl import OpenGLImageWidget
 from shell_jekyll.ui.opengl_single import OpenGLImageSingleWidget
 from shell_jekyll.ui.layer_ui import LayerListWidget
 from shell_jekyll.ui.expression_widgets import TCLExpressionWidget, CELExpressionWidget
-from shell_jekyll import gb_var as gb_var_script
+from shell_jekyll.utils.editing_utils import FALLBACK_IMAGE
 from shell_jekyll import gb_var as gb_var_global
-
-gb_var = gb_var_script.get_gbvar_ctx()
-gb_var_full = gb_var_script.get_gbvar_full() 
 
 class MainWinUIMixin:
     def _init_ui(self):
+        """Build the widgets.
+
+        [Changed] Widgets are attached to the controller (``self.sj``);
+        ``mediaStatusChanged`` is connected so ``on_finished`` (which existed
+        but was never connected) re-enables Play at the end of the video; the
+        two dead statements ``video_lo.addSpacing`` (no call parentheses, did
+        nothing) were removed; the expression widgets receive the controller.
+        """
         main_lo = QVBoxLayout()
         main_lo.setSpacing(10)
         main_lo.setContentsMargins(16, 16, 16, 16)
@@ -62,12 +65,12 @@ class MainWinUIMixin:
         self.layer_list.currentItemChanged.connect(self.switch_active_layer)
         graphics_lo.addWidget(self.layer_list)
 
-        self.gl_widget = OpenGLImageWidget(str(Path(__file__).resolve().parents[2] / "_resources" / "fallback.png"))
+        self.gl_widget = OpenGLImageWidget(str(FALLBACK_IMAGE))
         graphics_lo.addWidget(self.gl_widget, stretch=2)
         self.layer_list.opengl_widget = self.gl_widget
+        self.sj.attach_preview(self.gl_widget)
 
         self.ref_player = QMediaPlayer()
-        self.ref_fps = 0.0
         graphics_sublo = QVBoxLayout()
         self.ref_video_widget = QVideoWidget()
         graphics_sublo.addWidget(self.ref_video_widget)
@@ -75,19 +78,23 @@ class MainWinUIMixin:
         self.ref_audio_widget = QAudioOutput()
         self.ref_player.setAudioOutput(self.ref_audio_widget)
         self.ref_player.videoSink().videoFrameChanged.connect(self.ref_video_proceed)
+        self.ref_player.mediaStatusChanged.connect(self.on_media_status_changed)
+        self.sj.attach_ref_player(self.ref_player)
 
         self.ref_video_widget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ref_video_widget.customContextMenuRequested.connect(self.ref_ctx_menu)
 
-        self.ref_gl_widget = OpenGLImageSingleWidget(str(Path(__file__).resolve().parents[2] / "_resources" / "fallback.png"))
+        self.ref_gl_widget = OpenGLImageSingleWidget(str(FALLBACK_IMAGE))
         self.ref_gl_widget.setObjectName("RefOpenGLWidget")
         graphics_sublo.addWidget(self.ref_gl_widget)
         graphics_lo.addLayout(graphics_sublo, stretch=1)
         main_lo.addLayout(graphics_lo, 6)
+        self.sj.attach_ref_preview(self.ref_gl_widget)
         self.ref_seq_idx_label = QLabel("--", self.ref_gl_widget)
         self.ref_seq_idx_label.setStyleSheet("color : white ;")
         self.ref_seq_idx_label.move(15, 10)
         self.ref_seq_idx_label.setFixedWidth(30)
+        self.ref_gl_widget.installEventFilter(self)
 
         btn_lo = QHBoxLayout()
         prev_btn = QPushButton("Previous")
@@ -126,7 +133,6 @@ class MainWinUIMixin:
         self.render_btn.setObjectName("primaryButton")
         self.render_btn.clicked.connect(self.render_sequence)
         video_lo.addWidget(self.render_btn)
-        video_lo.addSpacing
 
         fps_input_lo = QHBoxLayout()
         fps_label = QLabel("FPS : ")
@@ -149,9 +155,9 @@ class MainWinUIMixin:
         expression_lo.addWidget(self.expression_lang_combo)
 
         self.expression_widgets = QStackedWidget()
-        self.tcl_widget = TCLExpressionWidget()
+        self.tcl_widget = TCLExpressionWidget(self.sj)
         self.expression_widgets.addWidget(self.tcl_widget)
-        self.cel_widget = CELExpressionWidget()
+        self.cel_widget = CELExpressionWidget(self.sj)
         self.expression_widgets.addWidget(self.cel_widget)
         expression_lo.addWidget(self.expression_widgets)
         self.expression_widgets.setCurrentIndex(0)
@@ -163,5 +169,3 @@ class MainWinUIMixin:
         self.setStyleSheet(gb_var_global.style_script.MAIN_WIN_STYLESHEET)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setLayout(main_lo)
-
-    

@@ -1,87 +1,77 @@
-from pathlib import Path
-
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QPushButton, QDialog
-from PySide6.QtMultimedia import QVideoFrame
+from PySide6.QtMultimedia import QMediaPlayer, QVideoFrame
+from PySide6.QtWidgets import QDialog
 import psutil
 
 from shell_jekyll.ui.render_dialog import RenderDialog
-from shell_jekyll.utils.editing_utils import EditingUtils
-from shell_jekyll import gb_var as gb_var_script
-from shell_jekyll import gb_var as gb_var_global
-
-gb_var = gb_var_script.get_gbvar_ctx()
-gb_var_full = gb_var_script.get_gbvar_full()
+from shell_jekyll.ui.ui_utils import flash_button
 
 class MainWinPlaybackMixin:
 
-    def play_sequence(self):
-        if not self.gl_widget.ram_img_buffer:
-            print("buffering")
-            self.gl_widget.send_img_to_buffer()
+    def _update_mem_label(self):
         mem = round(psutil.virtual_memory().percent)
         self.release_buff_btn.setText(f"Release Buff. ({mem}%)")
+
+    def play_sequence(self):
+        """Pre-load all frames into GPU buffers (first time only), then play the reference video.
+
+        [Changed] Playback works again: the video frame callback
+        (``ref_video_proceed``) now drives the preview through the frames held
+        in the VBO store.  See ``ShellJekyll.play_sequence``.
+        """
+        self.sj.preload_frames()
+        self._update_mem_label()
         self.play_btn.setEnabled(False)
         self.pause_btn.setEnabled(True)
-        if self.ref_player.position() == 0:
-            self.ref_player.setPosition(gb_var.ref_video_start)
-            print(gb_var.ref_video_start)
-            self.ref_frame_offset = int((gb_var.ref_video_start / 1000.0) * self.ref_fps)
-        self.ref_player.play()
+        self.sj.play_sequence()
         self.back_to_start_btn.setEnabled(False)
 
-    def pause_sequence(self, arrived_idx):
-        self.ref_player.pause()
+    def pause_sequence(self, *_):
+        """Pause the reference video.  [Changed] ``*_`` replaces the unused ``arrived_idx`` parameter that only swallowed the ``clicked(bool)`` argument."""
+        self.sj.pause_sequence()
         self.play_btn.setEnabled(True)
         self.pause_btn.setEnabled(False)
         self.back_to_start_btn.setEnabled(True)
 
     def back_to_start(self):
-        self.ref_player.setPosition(0)
+        self.sj.back_to_start()
 
     def release_buffer(self):
-        if self.gl_widget.ram_img_buffer:
-            self.gl_widget.release_buffer()
-            mem = round(psutil.virtual_memory().percent)
-            self.release_buff_btn.setText(f"Release Buff. ({mem}%)")
+        """Free the pre-loaded frames.  [Changed] Delegates to ``ShellJekyll.release_buffer`` (``is_preloaded`` replaces the ``ram_img_buffer`` check)."""
+        if self.gl_widget.is_preloaded:
+            self.sj.release_buffer()
+            self._update_mem_label()
 
     def on_finished(self):
+        """The video ended.  [Changed] Also re-enables "Back" (``play_sequence`` disables it and only Pause re-enabled it)."""
         self.play_btn.setEnabled(True)
         self.pause_btn.setEnabled(False)
+        self.back_to_start_btn.setEnabled(True)
+
+    def on_media_status_changed(self, status):
+        """[Added] ``on_finished`` existed but was never connected; call it when the video ends."""
+        if status == QMediaPlayer.MediaStatus.EndOfMedia:
+            self.on_finished()
 
     def ref_video_proceed(self, frame: QVideoFrame):
-        if not frame.isValid() or gb_var.mata_filename is None:
+        """A reference-video frame was shown: show the matching timeline frame."""
+        if not frame.isValid():
             return
-        current_frame = int(round((frame.startTime() / 1000000.0) * self.ref_fps))
-        current_frame -= self.ref_frame_offset
-        self.seq_idx = current_frame
-        self.current_frame_label.setText(str(self.seq_idx))
-        next_image_paths = []
-        for l in range(0, len(gb_var_full.first_sequence_idx)):
-            actual_img_idx = EditingUtils.get_actual_img_idx(seq_idx=self.seq_idx, layer=l)
-            actual_filename = EditingUtils.get_actual_filepath(img_idx=actual_img_idx, layer=l)
-            self.current_actual_img_idx_label.setText(str(actual_img_idx))
-            next_image_path = gb_var.sequence_root_dir / actual_filename
-            if not next_image_path.exists():
-                next_image_path = str(Path(__file__).resolve().parents[2] / "_resources" / "fallback.png")
-            next_image_paths.append(str(next_image_path))
-        self.gl_widget.change_image_onram(
-            next_image_paths=next_image_paths
-        )
-
+        self.sj.ref_video_proceed(frame.startTime())
 
     def render_sequence(self):
-        render_dialog_call = RenderDialog(fps=int(self.fps_input_field.text())).exec()
+        """Open the render dialog.
+
+        [Changed] ``int(self.fps_input_field.text())`` raised ``ValueError`` for
+        any fractional frame rate such as ``29.97`` (the field is a
+        ``QDoubleValidator`` and is filled from the video's fps); ``float`` now.
+        """
+        try:
+            fps = float(self.fps_input_field.text())
+        except ValueError:
+            return
+        render_dialog_call = RenderDialog(fps=fps, controller=self.sj).exec()
         if render_dialog_call == QDialog.Accepted:
-            self.render_btn.setStyleSheet(f"color : {gb_var_global.style_script.MAIN_WIN_SUCCESS} ;")
-            self.render_btn.setText("Rendered")
-            self.render_btn.setEnabled(False)
-            QTimer().singleShot(
-                2000,
-                lambda: self._recover_btn(
-                    btn=self.render_btn,
-                    original_text="Render")
-                )
+            flash_button(self.render_btn, flash_text="Rendered", original_text="Render")
 
     def switch_expression_lang(self):
         lang = self.expression_lang_combo.currentText()
@@ -91,12 +81,3 @@ class MainWinPlaybackMixin:
             self.expression_widgets.setCurrentIndex(1)
         else:
             self.expression_widgets.setCurrentIndex(0)
-
-
-    def _recover_btn(self,
-                     btn: QPushButton,
-                     original_text: str
-                     ):
-        btn.setStyleSheet(f"color : {gb_var_global.style_script.MAIN_WIN_TEXT} ;")
-        btn.setText(original_text)
-        btn.setEnabled(True)
