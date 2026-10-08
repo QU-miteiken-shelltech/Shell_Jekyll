@@ -10,9 +10,9 @@ from PySide6.QtOpenGL import (
 )
 from OpenGL import GL
 
-from shell_delta.gb_var import TimeMap as time_map
-from shell_delta import gb_var as gb_var_script
-from shell_delta.utils.editing_utils import EditingUtils
+from shell_jekyll.gb_var import TimeMap as time_map
+from shell_jekyll import gb_var as gb_var_script
+from shell_jekyll.utils.editing_utils import EditingUtils
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()
@@ -228,7 +228,7 @@ class OpenGLImageWidget(QOpenGLWidget):
     def paintGL(self):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 
-        if not self.texture:
+        if not self.texture or not self.program:
             return
         self.texture = self.texture[::-1]
         

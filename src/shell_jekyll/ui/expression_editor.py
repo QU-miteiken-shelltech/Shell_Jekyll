@@ -3,9 +3,9 @@ from PySide6.QtWidgets import (
     QPushButton, QHBoxLayout, QFileDialog
 )
 
-from shell_delta import gb_var as gb_var_script
-from shell_delta import gb_var as gb_var_global
-from shell_delta.io.io_sdproj import IO_sdproj
+from shell_jekyll import gb_var as gb_var_script
+from shell_jekyll import gb_var as gb_var_global
+from shell_jekyll.io.io_sjproj import IO_sjproj
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()
@@ -50,7 +50,7 @@ class ExpressionEditor(QDialog):
         if saving_path is None:
             self.reject()
             return
-        IO_sdproj.write_sdproj(
+        IO_sjproj.write_sjproj(
             saving_path=str(saving_path),
             writing_info={"expression" : self.scripting_area.toPlainText()}
         )
@@ -61,7 +61,7 @@ class ExpressionEditor(QDialog):
         if saving_path is None:
             self.reject()
             return
-        current_expression = IO_sdproj.read_sdproj(
+        current_expression = IO_sjproj.read_sjproj(
             reading_path=str(saving_path),
             reading_attr="expression"
         )

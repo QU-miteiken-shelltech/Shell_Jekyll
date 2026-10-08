@@ -5,10 +5,10 @@ from PySide6.QtWidgets import(
 )
 from PySide6.QtGui import QIntValidator, QDoubleValidator
 
-from shell_delta.render import render_formats
-from shell_delta.render.render import RenderVideo
-from shell_delta import gb_var as gb_var_script
-from shell_delta import gb_var as gb_var_global
+from shell_jekyll.render import render_formats
+from shell_jekyll.render.render import RenderVideo
+from shell_jekyll import gb_var as gb_var_script
+from shell_jekyll import gb_var as gb_var_global
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()

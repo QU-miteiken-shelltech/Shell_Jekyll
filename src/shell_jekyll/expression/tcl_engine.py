@@ -1,7 +1,7 @@
 import tkinter
 
-from shell_delta.io.io_sdproj import IO_sdproj
-from shell_delta import gb_var as gb_var_script
+from shell_jekyll.io.io_sjproj import IO_sjproj
+from shell_jekyll import gb_var as gb_var_script
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()
@@ -13,7 +13,7 @@ class TCLEngine:
         if reading_path is None:
             print("TCL Engine used when reading_path is None")
             return
-        self.expression = IO_sdproj.read_sdproj(
+        self.expression = IO_sjproj.read_sjproj(
             reading_path=str(reading_path),
             reading_attr="expression"
         )

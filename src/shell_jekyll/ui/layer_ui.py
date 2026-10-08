@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QListWidget
 from PySide6.QtCore import Qt
 
-from shell_delta import gb_var as gb_var_script
+from shell_jekyll import gb_var as gb_var_script
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()

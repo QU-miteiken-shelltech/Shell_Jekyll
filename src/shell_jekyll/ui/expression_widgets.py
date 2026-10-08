@@ -8,13 +8,13 @@ from PySide6.QtWidgets import (
     QComboBox, QDialog, QLineEdit,
     QLabel, QCompleter
 )
-from shell_delta.ui.expression_editor import ExpressionEditor
-from shell_delta.gb_var import TimeMap as time_map
-from shell_delta.expression.tcl_engine import TCLEngine
-from shell_delta.expression.cel_engine import CELEngine
-from shell_delta.io.io_sdproj import IO_sdproj
-from shell_delta import gb_var as gb_var_script
-from shell_delta import gb_var as gb_var_global
+from shell_jekyll.ui.expression_editor import ExpressionEditor
+from shell_jekyll.gb_var import TimeMap as time_map
+from shell_jekyll.expression.tcl_engine import TCLEngine
+from shell_jekyll.expression.cel_engine import CELEngine
+from shell_jekyll.io.io_sjproj import IO_sjproj
+from shell_jekyll import gb_var as gb_var_script
+from shell_jekyll import gb_var as gb_var_global
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()
@@ -74,7 +74,7 @@ class TCLExpressionWidget(QWidget):
         self.exec_btn.setStyleSheet(f"color : {gb_var_global.style_script.MAIN_WIN_SUCCESS} ;")
         self.exec_btn.setText("Executed")
         self.exec_btn.setEnabled(False)
-        IO_sdproj.write_sdproj(
+        IO_sjproj.write_sjproj(
             saving_path=gb_var.saving_path,
             writing_info={"time_map" : time_map.time_map}
         )
@@ -155,7 +155,7 @@ class CELExpressionWidget(QWidget):
         self.exec_btn.setStyleSheet(f"color : {gb_var_global.style_script.MAIN_WIN_SUCCESS} ;")
         self.exec_btn.setText("Executed")
         self.exec_btn.setEnabled(False)
-        IO_sdproj.write_sdproj(
+        IO_sjproj.write_sjproj(
             saving_path=gb_var.saving_path,
             writing_info={"time_map" : time_map.time_map}
         )

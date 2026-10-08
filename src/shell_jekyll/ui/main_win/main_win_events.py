@@ -2,9 +2,9 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QMenu
 
-from shell_delta.utils.editing_utils import EditingUtils
-from shell_delta.gb_var import TimeMap as time_map
-from shell_delta import gb_var as gb_var_script
+from shell_jekyll.utils.editing_utils import EditingUtils
+from shell_jekyll.gb_var import TimeMap as time_map
+from shell_jekyll import gb_var as gb_var_script
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()
@@ -20,12 +20,11 @@ class MainWinEventsMixin:
             return
         self.inputting = False
 
-        if is_increment:
-            self.seq_idx += increment_step if is_foward else -increment_step
-        else:
-            self.seq_idx = int(self.current_frame_label.text())
-
         if self.is_on_main_window:
+            if is_increment:
+                self.seq_idx += increment_step if is_foward else -increment_step
+            else:
+                self.seq_idx = int(self.current_frame_label.text())
             new_image_paths = []
             for l in range(0, len(gb_var_full.first_sequence_idx)):
                 actual_img_idx = EditingUtils.get_actual_img_idx(seq_idx=self.seq_idx, layer=l)
@@ -44,6 +43,8 @@ class MainWinEventsMixin:
                 new_image_paths=new_image_paths
             )
         else:
+            if is_increment:
+                self.ref_seq_idx += increment_step if is_foward else -increment_step
             self.ref_seq_idx_label.setText(str(self.ref_seq_idx))
             actual_filename = EditingUtils.get_actual_filepath(img_idx=self.ref_seq_idx, layer=gb_var.active_layer)
             new_image_path = gb_var.sequence_root_dir / actual_filename

@@ -4,13 +4,13 @@ import numpy
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QApplication
 
-from shell_delta import gb_var as gb_var_script
-from shell_delta.gb_var import TimeMap as time_map
-from shell_delta.utils.editing_utils import EditingUtils
-from shell_delta.ui.main_win.main_win_ui import MainWinUIMixin
-from shell_delta.ui.main_win.main_win_io import MainWinIOMixin
-from shell_delta.ui.main_win.main_win_playback import MainWinPlaybackMixin
-from shell_delta.ui.main_win.main_win_events import MainWinEventsMixin
+from shell_jekyll import gb_var as gb_var_script
+from shell_jekyll.gb_var import TimeMap as time_map
+from shell_jekyll.utils.editing_utils import EditingUtils
+from shell_jekyll.ui.main_win.main_win_ui import MainWinUIMixin
+from shell_jekyll.ui.main_win.main_win_io import MainWinIOMixin
+from shell_jekyll.ui.main_win.main_win_playback import MainWinPlaybackMixin
+from shell_jekyll.ui.main_win.main_win_events import MainWinEventsMixin
  
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()

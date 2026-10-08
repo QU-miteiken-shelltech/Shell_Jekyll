@@ -1,4 +1,4 @@
 dist/
 cpp/build/
-shelldelta_env/
+venv/
 cpp/build_x/

@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any
 
 import numpy
 
-from shell_delta.style import (
+from shell_jekyll.style import (
     dark_default, pure_skyblue,
     kawaii_pink, elegant_light
     )

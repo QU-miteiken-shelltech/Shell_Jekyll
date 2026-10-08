@@ -2,9 +2,9 @@ from pathlib import Path
 
 import cv2
 
-from shell_delta.gb_var import TimeMap as time_map
-from shell_delta.utils.editing_utils import EditingUtils
-from shell_delta import gb_var as gb_var_script
+from shell_jekyll.gb_var import TimeMap as time_map
+from shell_jekyll.utils.editing_utils import EditingUtils
+from shell_jekyll import gb_var as gb_var_script
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()

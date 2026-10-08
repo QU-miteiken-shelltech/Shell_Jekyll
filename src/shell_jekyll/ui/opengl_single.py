@@ -93,11 +93,11 @@ class OpenGLImageSingleWidget(QOpenGLWidget):
             self.texture.destroy()
             self.texture = None
 
+        print(f"@@ path : {path}")
         image = QImage(path)
         if not image.isNull():
             self.image_path = path
             self.image_ratio = image.width() / image.height()
-
             texture = QOpenGLTexture(image)
             texture.setMinificationFilter(QOpenGLTexture.Filter.Linear)
             texture.setMagnificationFilter(QOpenGLTexture.Filter.Linear)
@@ -138,19 +138,21 @@ class OpenGLImageSingleWidget(QOpenGLWidget):
             scale_x, scale_y = 1.0, widget_aspect / img_aspect
         self.program.setUniformValue("uScale", scale_x, scale_y)
 
-        self.texture.bind(0)
-        unit_indicies = [0] * MAX_LAYERS
-        enabled_flags = [0] * MAX_LAYERS
-        enabled_flags[0] = 1
+        # self.texture.bind(0)
+        # unit_indicies = [0] * MAX_LAYERS
+        # enabled_flags = [0] * MAX_LAYERS
+        # enabled_flags[0] = 1
 
-        self.program.setUniformValueArray("uLayers", unit_indicies, MAX_LAYERS)
-        self.program.setUniformValueArray("uLayerEnabled", enabled_flags, MAX_LAYERS)
-        self.program.setUniformValue("uLayerCount", 1)
-        self.program.setUniformValue("uBgColor", 0.0, 0.0, 0.0)
+        # self.program.setUniformValueArray("uLayers", unit_indicies, MAX_LAYERS)
+        # self.program.setUniformValueArray("uLayerEnabled", enabled_flags, MAX_LAYERS)
+        # self.program.setUniformValue("uLayerCount", 1)
+        # self.program.setUniformValue("uBgColor", 0.0, 0.0, 0.0)
 
         GL.glBindVertexArray(self.vao)
         GL.glDrawArrays(GL.GL_TRIANGLES, 0, 6)
         GL.glBindVertexArray(0)
+
+        print("HELLO")
 
         self.texture.release()
         self.program.release()

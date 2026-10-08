@@ -11,12 +11,12 @@ from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 import psutil
 
-from shell_delta.ui.opengl import OpenGLImageWidget
-from shell_delta.ui.opengl_single import OpenGLImageSingleWidget
-from shell_delta.ui.layer_ui import LayerListWidget
-from shell_delta.ui.expression_widgets import TCLExpressionWidget, CELExpressionWidget
-from shell_delta import gb_var as gb_var_script
-from shell_delta import gb_var as gb_var_global
+from shell_jekyll.ui.opengl import OpenGLImageWidget
+from shell_jekyll.ui.opengl_single import OpenGLImageSingleWidget
+from shell_jekyll.ui.layer_ui import LayerListWidget
+from shell_jekyll.ui.expression_widgets import TCLExpressionWidget, CELExpressionWidget
+from shell_jekyll import gb_var as gb_var_script
+from shell_jekyll import gb_var as gb_var_global
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full() 

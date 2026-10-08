@@ -6,11 +6,11 @@ from PySide6.QtCore import QUrl, Qt
 from PySide6.QtWidgets import QFileDialog
 import cv2
 
-from shell_delta.gb_var import TimeMap as time_map
-from shell_delta.io.io_sdproj import IO_sdproj
-from shell_delta.expression.tcl_engine import TCLEngine
-from shell_delta.utils.editing_utils import EditingUtils
-from shell_delta import gb_var as gb_var_script
+from shell_jekyll.gb_var import TimeMap as time_map
+from shell_jekyll.io.io_sjproj import IO_sjproj
+from shell_jekyll.expression.tcl_engine import TCLEngine
+from shell_jekyll.utils.editing_utils import EditingUtils
+from shell_jekyll import gb_var as gb_var_script
 
 gb_var = gb_var_script.get_gbvar_ctx()
 gb_var_full = gb_var_script.get_gbvar_full()
@@ -26,10 +26,10 @@ class MainWinIOMixin:
         self.tcl_widget.command_func_combo.addItems(TCLEngine().get_procs())
 
     def read_proj(self):
-        filename, _ = QFileDialog.getOpenFileName(self, "Open Sequence", "", "Shell Delta proj. (*.sdproj)")
+        filename, _ = QFileDialog.getOpenFileName(self, "Open Sequence", "", "Shell Jekyll proj. (*.sjproj)")
         if not filename:
             return
-        IO_sdproj.load_sdproj(reading_path=filename)
+        IO_sjproj.load_sjproj(reading_path=filename)
         self.seq_idx = 1
         if not gb_var_full.mata_filename:
             return
@@ -76,7 +76,7 @@ class MainWinIOMixin:
 
     def save_proj(self):
         if gb_var.saving_path is None:
-            filename, _ = QFileDialog.getOpenFileName(self, "Open Sequence", "", "Shell Delta proj. (*.sdproj)")
+            filename, _ = QFileDialog.getOpenFileName(self, "Open Sequence", "", "Shell Jekyll proj. (*.sjproj)")
             if not filename:
                 return
         else:
@@ -94,7 +94,7 @@ class MainWinIOMixin:
             "ref_path" : str(gb_var_full.ref_path),
             "layer_order" : [int(i) for i in gb_var_full.layer_order]
         }
-        IO_sdproj.write_sdproj(
+        IO_sjproj.write_sjproj(
             saving_path=filename,
             writing_info=writing_info
         )

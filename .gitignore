@@ -1,8 +1,8 @@
 **/__pycache__/**
 **/.DS_Store
-src/shell_delta/testPNGs/
+src/shell_jekyll/testPNGs/
 /dist/**
-*.sdproj
+*.sjproj
 **/build/**
 **/out/**
 **/test/**
