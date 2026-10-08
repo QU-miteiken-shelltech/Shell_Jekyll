@@ -1,27 +1,27 @@
 import json
 from pathlib import Path
 
-from PySide6.QtCore import QTimer, QStringListModel
+from PySide6.QtCore import QStringListModel
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QPushButton, 
+    QWidget, QHBoxLayout, QPushButton,
     QComboBox, QDialog, QLineEdit,
     QLabel, QCompleter
 )
 from shell_jekyll.ui.expression_editor import ExpressionEditor
-from shell_jekyll.gb_var import TimeMap as time_map
-from shell_jekyll.expression.tcl_engine import TCLEngine
-from shell_jekyll.expression.cel_engine import CELEngine
-from shell_jekyll.io.io_sjproj import IO_sjproj
-from shell_jekyll import gb_var as gb_var_script
-from shell_jekyll import gb_var as gb_var_global
+from shell_jekyll.ui.ui_utils import flash_button
 
-gb_var = gb_var_script.get_gbvar_ctx()
-gb_var_full = gb_var_script.get_gbvar_full()
+PRESETS_PATH = Path(__file__).resolve().parents[1] / "_resources" / "expression_presets.json"
+
 
 class TCLExpressionWidget(QWidget):
-    def __init__(self):
+    def __init__(self, controller):
+        """``controller``: the ``shell_jekyll.api.ShellJekyll`` that runs the expression.
+
+        [Changed] The no-op ``lo.addStretch`` (missing parentheses) was removed, so the layout is unchanged.
+        """
         super().__init__()
+        self.sj = controller
         lo = QHBoxLayout()
         self.command_func_combo = QComboBox()
         self.command_func_combo.setFixedWidth(300)
@@ -33,7 +33,6 @@ class TCLExpressionWidget(QWidget):
         self.edit_btn.clicked.connect(self.edit_expresion)
         lo.addWidget(self.edit_btn)
 
-        lo.addStretch
         self.from_word_label = QLabel("loop over frames")
         lo.addWidget(self.from_word_label)
         self.run_from_input = QLineEdit("0")
@@ -47,65 +46,48 @@ class TCLExpressionWidget(QWidget):
         self.setLayout(lo)
 
     def edit_expresion(self):
-            expression_edit = ExpressionEditor().exec()
-            if expression_edit == QDialog.Accepted:
-                self.command_func_combo.clear()
-                self.command_func_combo.addItems(TCLEngine().get_procs())
-    
-    def run_expression(self):
-        func_name = self.command_func_combo.currentText()
-        from_frame = int(self.run_from_input.text())
-        to_frame = int(self.run_to_input.text())
-        arguements = {
-            "frame" : frame,
-            "seq_count" : len(gb_var.base_frame_list),
-            "loop_count" : to_frame - from_frame + 1,
-            "cframe" : int(time_map.time_map[gb_var.active_layer].get(frame, frame))
-        }
-        for frame in range(from_frame, to_frame+1):
-            tcl_rtn = TCLEngine().run_tcl(
-                func_name=func_name,
-                **arguements
-            )
-            if int(tcl_rtn) in gb_var.base_frame_list:
-                time_map.time_map[gb_var.active_layer][frame] = int(tcl_rtn)
-            else:
-                continue
-        self.exec_btn.setStyleSheet(f"color : {gb_var_global.style_script.MAIN_WIN_SUCCESS} ;")
-        self.exec_btn.setText("Executed")
-        self.exec_btn.setEnabled(False)
-        IO_sjproj.write_sjproj(
-            saving_path=gb_var.saving_path,
-            writing_info={"time_map" : time_map.time_map}
-        )
-        QTimer().singleShot(
-            2000, 
-            lambda: self._recover_btn(
-                btn=self.exec_btn,
-                original_text="Run Expression")
-            )
+        """Open the script editor.  [Changed] The editor and the proc list use the controller."""
+        expression_edit = ExpressionEditor(self.sj).exec()
+        if expression_edit == QDialog.Accepted:
+            self.command_func_combo.clear()
+            self.command_func_combo.addItems(self.sj.get_tcl_procs())
 
-    def _recover_btn(self, 
-                        btn: QPushButton,
-                        original_text: str
-                        ):
-        btn.setStyleSheet(f"color : {gb_var_global.style_script.MAIN_WIN_TEXT} ;")
-        btn.setText(original_text)
-        btn.setEnabled(True)
+    def run_expression(self):
+        """Run the selected TCL proc over the frame range (see ``ShellJekyll.run_tcl_expression``).
+
+        [Changed] Works now: the old body built the argument dict with the loop
+        variable ``frame`` before the loop (``UnboundLocalError`` on every
+        click).  Empty range fields are ignored instead of raising.
+        """
+        try:
+            from_frame = int(self.run_from_input.text())
+            to_frame = int(self.run_to_input.text())
+        except ValueError:
+            return
+        self.sj.run_tcl_expression(
+            func_name=self.command_func_combo.currentText(),
+            from_frame=from_frame,
+            to_frame=to_frame
+        )
+        flash_button(self.exec_btn, flash_text="Executed", original_text="Run Expression")
 
 
 class CELExpressionWidget(QWidget):
-    def __init__(self):
+    def __init__(self, controller):
+        """``controller``: the ``shell_jekyll.api.ShellJekyll`` that runs the expression.
+
+        [Changed] A missing presets file now raises ``FileNotFoundError`` with the
+        path (it was a bare ``raise Exception``); the no-op ``lo.addStretch``
+        (missing parentheses) was removed, so the layout is unchanged.
+        """
         super().__init__()
+        self.sj = controller
         lo = QHBoxLayout()
         self.cel_input = QLineEdit()
         self.cel_input.setPlaceholderText("CEL expression ...")
         self.cel_input.setFixedWidth(220)
         lo.addWidget(self.cel_input)
-        if not (Path(__file__).resolve().parents[1] / "_resources/expression_presets.json").exists():
-            raise Exception
-        with open (Path(__file__).resolve().parents[1] / "_resources/expression_presets.json", 
-                   "r", encoding="utf-8") as f:
+        with open(PRESETS_PATH, "r", encoding="utf-8") as f:
             self.presets = json.load(f)
         preset_completer = QCompleter()
         preset_completer.setModel(QStringListModel(self.presets))
@@ -117,7 +99,6 @@ class CELExpressionWidget(QWidget):
         self.exec_btn.clicked.connect(self.run_expression)
         lo.addWidget(self.exec_btn)
 
-        lo.addStretch
         self.from_word_label = QLabel("loop over frames")
         lo.addWidget(self.from_word_label)
         self.run_from_input = QLineEdit("0")
@@ -131,51 +112,25 @@ class CELExpressionWidget(QWidget):
         self.setLayout(lo)
 
     def run_expression(self):
-        from_frame = int(self.run_from_input.text())
-        to_frame = int(self.run_to_input.text())
-        cel_engine = CELEngine(
-            cel_expression=self.cel_input.text().strip()
+        """Run the CEL expression over the frame range (see ``ShellJekyll.run_cel_expression``).
+
+        The debug ``print`` of ``base_frame_list`` / ``asdict(gb_var)`` was removed.
+        """
+        try:
+            from_frame = int(self.run_from_input.text())
+            to_frame = int(self.run_to_input.text())
+        except ValueError:
+            return
+        self.sj.run_cel_expression(
+            expression=self.cel_input.text(),
+            from_frame=from_frame,
+            to_frame=to_frame
         )
-        print(gb_var.base_frame_list)
-        from dataclasses import asdict
-        print(asdict(gb_var))
-        for frame in range(from_frame, to_frame+1):
-            cel_rtn = cel_engine.run_cel(
-                data={
-                    "frame" : frame,
-                    "seq_count" : len(gb_var.base_frame_list),
-                    "loop_count" : to_frame - from_frame + 1,
-                    "cframe" : int(time_map.time_map[gb_var.active_layer].get(frame, frame))
-                }
-            )
-            if int(cel_rtn) in gb_var.base_frame_list:
-                time_map.time_map[gb_var.active_layer][frame] = int(cel_rtn)
-            else:
-                continue
-        self.exec_btn.setStyleSheet(f"color : {gb_var_global.style_script.MAIN_WIN_SUCCESS} ;")
-        self.exec_btn.setText("Executed")
-        self.exec_btn.setEnabled(False)
-        IO_sjproj.write_sjproj(
-            saving_path=gb_var.saving_path,
-            writing_info={"time_map" : time_map.time_map}
-        )
-        QTimer().singleShot(
-            2000, 
-            lambda: self._recover_btn(
-                btn=self.exec_btn,
-                original_text="Run Expression")
-            )
+        flash_button(self.exec_btn, flash_text="Executed", original_text="Run Expression")
 
     def complete_presets(self):
+        """Replace a typed ``$preset`` name by its expression (unchanged)."""
         if not self.cel_input.text().startswith("$"):
             return
         preset_used = self.cel_input.text()
         self.cel_input.setText(self.presets.get(preset_used, ""))
-
-    def _recover_btn(self, 
-                        btn: QPushButton,
-                        original_text: str
-                        ):
-        btn.setStyleSheet(f"color : {gb_var_global.style_script.MAIN_WIN_TEXT} ;")
-        btn.setText(original_text)
-        btn.setEnabled(True)

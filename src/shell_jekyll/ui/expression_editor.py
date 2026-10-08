@@ -3,16 +3,13 @@ from PySide6.QtWidgets import (
     QPushButton, QHBoxLayout, QFileDialog
 )
 
-from shell_jekyll import gb_var as gb_var_script
 from shell_jekyll import gb_var as gb_var_global
-from shell_jekyll.io.io_sjproj import IO_sjproj
-
-gb_var = gb_var_script.get_gbvar_ctx()
-gb_var_full = gb_var_script.get_gbvar_full()
 
 class ExpressionEditor(QDialog):
-    def __init__(self):
+    def __init__(self, controller):
+        """``controller``: the ``shell_jekyll.api.ShellJekyll`` that stores the script in the project."""
         super().__init__()
+        self.sj = controller
         self.resize(600,390)
 
         dialog_lo = QVBoxLayout()
@@ -38,6 +35,7 @@ class ExpressionEditor(QDialog):
         self.setLayout(dialog_lo)
 
     def load_tcl_script(self):
+        """Load a .tcl file into the editor (unchanged)."""
         filename, _ = QFileDialog.getOpenFileName(self, "Open TCL Script", "", "TCL Script (*.tcl)")
         if not filename:
             return
@@ -46,24 +44,16 @@ class ExpressionEditor(QDialog):
         self.scripting_area.setPlainText(expression_content)
 
     def save_expression(self):
-        saving_path = gb_var.saving_path
-        if saving_path is None:
+        """Store the script in the project file (``ShellJekyll.save_expression``); reject if the project has no file yet."""
+        if not self.sj.save_expression(self.scripting_area.toPlainText()):
             self.reject()
             return
-        IO_sjproj.write_sjproj(
-            saving_path=str(saving_path),
-            writing_info={"expression" : self.scripting_area.toPlainText()}
-        )
         self.accept()
 
     def set_expression(self):
-        saving_path = gb_var.saving_path
-        if saving_path is None:
+        if self.sj.saving_path is None:
             self.reject()
             return
-        current_expression = IO_sjproj.read_sjproj(
-            reading_path=str(saving_path),
-            reading_attr="expression"
-        )
+        current_expression = self.sj.get_expression()
         if current_expression is not None:
             self.scripting_area.setPlainText(current_expression)
