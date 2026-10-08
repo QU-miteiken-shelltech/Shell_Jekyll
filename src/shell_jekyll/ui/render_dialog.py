@@ -1,22 +1,23 @@
 from PySide6.QtWidgets import(
     QDialog, QFileDialog, QVBoxLayout,
     QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QComboBox
+    QPushButton, QComboBox, QMessageBox
 )
 from PySide6.QtGui import QIntValidator, QDoubleValidator
 
 from shell_jekyll.render import render_formats
-from shell_jekyll.render.render import RenderVideo
-from shell_jekyll import gb_var as gb_var_script
 from shell_jekyll import gb_var as gb_var_global
-
-gb_var = gb_var_script.get_gbvar_ctx()
-gb_var_full = gb_var_script.get_gbvar_full()
 
 class RenderDialog(QDialog):
     def __init__(self, 
-                 fps: float):
+                 fps: float,
+                 controller):
+        """``controller``: the ``shell_jekyll.api.ShellJekyll`` that renders the video.
+
+        [Changed] The no-op ``dialog_lo.addStretch`` (missing parentheses) was removed, so the layout is unchanged.
+        """
         super().__init__()
+        self.sj = controller
         dialog_lo = QVBoxLayout()
         dialog_lo.setSpacing(10)
         dialog_lo.setContentsMargins(16, 16, 16, 16)
@@ -80,7 +81,6 @@ class RenderDialog(QDialog):
         dir_lo.addWidget(browse_file_btn)
         dialog_lo.addLayout(dir_lo)
 
-        dialog_lo.addStretch
         render_btn = QPushButton("Render")
         render_btn.setObjectName("primaryButton")
         render_btn.clicked.connect(self.send_to_render)
@@ -96,20 +96,28 @@ class RenderDialog(QDialog):
         self.video_dir_input.setText(dir_selected)
 
     def send_to_render(self):
-        codec_4cc=render_formats.codec_type_list[self.codec_type_combo.currentText()]
-        container_extension=render_formats.container_type_list[self.container_type_combo.currentText()]
-        saving_dir = self.video_dir_input.text().rstrip("/")
+        """Read the form and render through ``ShellJekyll.render_video``.
+
+        [Changed] The old code could not render (see ``RenderVideo.compose_video``)
+        and had no error path: an empty number field raised ``ValueError`` and a
+        failed render silently closed the dialog as if it had succeeded.  Errors
+        are now shown in a message box and the dialog stays open.
+        """
+        saving_dir = self.video_dir_input.text()
         video_name = self.video_name_input.text()
-        video_size = (int(self.size_x_input.text()), int(self.size_y_input.text()))
-        export_range = (int(self.export_from_input.text()), int(self.export_to_input.text()))
         if not (saving_dir and video_name):
             return
-        render_video = RenderVideo(
-            codec_type=codec_4cc,
-            saving_path=f"{saving_dir}/{video_name}{container_extension}",
-            fps=float(self.fps_input.text()),
-            size=video_size,
-            export_range=export_range
-        )
-        render_video.compose_video()
+        try:
+            self.sj.render_video(
+                directory=saving_dir,
+                name=video_name,
+                codec=self.codec_type_combo.currentText(),
+                container=self.container_type_combo.currentText(),
+                fps=float(self.fps_input.text()),
+                size=(int(self.size_x_input.text()), int(self.size_y_input.text())),
+                export_range=(int(self.export_from_input.text()), int(self.export_to_input.text()))
+            )
+        except (ValueError, RuntimeError) as e:
+            QMessageBox.warning(self, "Render failed", str(e))
+            return
         self.accept()
