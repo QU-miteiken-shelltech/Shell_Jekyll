@@ -7,3 +7,4 @@ src/shell_jekyll/testPNGs/
 **/out/**
 **/test/**
 **/*.prof
+test_video/**
