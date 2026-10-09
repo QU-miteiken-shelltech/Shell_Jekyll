@@ -1,17 +1,4 @@
 #version 330 core
-// Layer compositing fragment shader.
-//
-// Pixel data does NOT come from sampler2D textures any more.  All frames live
-// in buffer objects (VBO-style storage, exposed as GL_TEXTURE_BUFFER) and a
-// frame is selected simply by its texel offset inside the buffer
-// (uFrameOffset / uFrameSize), so switching images = changing two uniforms.
-//
-// Pixels are RGBA8, rows stored top row first (same as QImage), straight alpha.
-//
-// Custom shaders: the last step calls userEffect(), which is defined in a
-// SEPARATE fragment shader object linked together with this one
-// (default: user_effect_default.glsl, identity).  Replace that object through
-// OpenGLImageWidget.set_effect_shader() to apply any GLSL post effect.
 
 in vec2 vTex;
 out vec4 FragColor;

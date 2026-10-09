@@ -26,7 +26,7 @@ Mixin 構成は維持し、機能の増減はせずに、バグ・冗長・未�
 
 GL の合格項目: 2層合成(レイヤー0が最前面)/ 何度再描画しても順序が変わらない / 表示切替 / アスペクト比 /
 双線形補間(参照実装と差0)/ **プリロード後のフレーム切替でGPUアップロード0回** / 複数バッファページ /
-バッファ拡張時の内容保持 / 欠損画像のフォールバック / カスタムGLSL(適用・コンパイルエラー時は直前のシェーダーを維持・uniform・全面差し替え)。
+複数ページへの分割保持 / 欠損画像のフォールバック / カスタムGLSL(適用・コンパイルエラー時は直前のシェーダーを維持・uniform・全面差し替え)。
 
 **未確認(お手元で最初に試してください)**
 1. 実機の PySide6 での `QShortcut` の挙動(特に FPS 欄など入力欄に文字を打てること、Return で `editingFinished` が効くこと)
@@ -182,7 +182,7 @@ view.shader_error                         # コンパイル失敗時のログ(�
 | ファイル | 変更 |
 |---|---|
 | `api.py` | **新規**。UI非依存の `ShellJekyll`(全操作の実体) |
-| `ui/gl_frame_store.py` | **新規**。画素をバッファオブジェクトに格納するフレームストア(ページ分割・拡張・コピー) |
+| `ui/gl_frame_store.py` | **新規**。画素をバッファオブジェクトに格納するフレームストア(ページ分割。ページは拡張せず、満杯なら新ページ) |
 | `ui/opengl.py` | 全面書き換え。VBOストア/カスタムシェーダー口/バグ修正。公開メソッド名は維持 |
 | `ui/opengl_single.py` | 1レイヤー用サブクラスに(157→20行) |
 | `shaders/utils/alpha_blending.glsl` | `texelFetch`+自前の双線形補間。`userEffect` 呼び出し |
@@ -197,3 +197,11 @@ view.shader_error                         # コンパイル失敗時のログ(�
 | `utils/layer_view.py` | **新規**。可視/サイズ基準の状態(Qt/GL非依存) |
 | `gb_var.py`, `io/io_sjproj.py`, `render/render.py`, `expression/*.py`, `__main__.py` | 第3章のとおり |
 | `tests/test_api_headless.py` | **新規**。Qt/GL不要の動作確認 |
+
+
+## 11. macOS(Apple Silicon)で判明した問題と修正(追記)
+
+実機のログ `gldCopyBufferSubData: NEEDS IMPLEMENTATION` と `unit 1 ... unloadable` を受けた修正。
+- `glCopyBufferSubData` はMacのOpenGL(Metal変換層)で未実装 → バッファの拡張コピーを廃止し、満杯になったら新ページ(前ページの2倍の容量)を追加する方式に変更(`gl_frame_store.py`)。
+- 未使用のテクスチャユニット(ユニット1〜7)に有効なバッファテクスチャが無かった → 1テクセルのダミーを全ユニットにバインド(`FrameStore.dummy_texture`、`paintGL`)。
+- `qt.qpa.fonts ... "Segoe UI"` はスタイルシートのフォント指定による警告で、機能には影響しません(元のコードのまま)。

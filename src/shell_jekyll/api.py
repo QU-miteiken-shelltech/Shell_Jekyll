@@ -156,7 +156,7 @@ class ShellJekyll:
     def create_preview(self, parent=None, width: int = 640, height: int = 360):
         """Create a stand-alone preview widget (no main window) and attach it."""
         ensure_qapplication()
-        from shell_jekyll.ui.opengl import OpenGLImageWidget
+        from shell_jekyll.ui.sj_editor.opengl import OpenGLImageWidget
         widget = OpenGLImageWidget(str(FALLBACK_IMAGE), parent)
         widget.resize(width, height)
         self.attach_preview(widget)
