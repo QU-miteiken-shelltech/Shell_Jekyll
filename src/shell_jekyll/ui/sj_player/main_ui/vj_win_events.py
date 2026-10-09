@@ -1,8 +1,18 @@
 from collections import UserList
 import json
+import socket
+import tempfile
+import os
+from threading import Thread
 
-from PySide6.QtWidgets import QFileDialog
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QFileDialog, QMainWindow
+from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt, Slot
+
+import qrcode
+
+from shell_jekyll.ui.sj_player.remote_app import RequestType, run_web_remote
+from shell_jekyll.ui.sj_editor.main_win.main_win import MainUserUi
 
 class PlayListObj(UserList):
     def __init__(self, initlist, video_list, audio_list):
@@ -39,6 +49,12 @@ class PlayListObj(UserList):
             
 
 class VjWinEventsMixin:
+    def go_to_editor(self):
+        editor_ui = MainUserUi()
+        win = self.window()
+        if isinstance(win, QMainWindow):
+            win.setCentralWidget(editor_ui)
+
     def add_video_to_playlist(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Open a video file", "", "All files (*)")
         if not filename:
@@ -133,6 +149,8 @@ class VjWinEventsMixin:
         self.back_btn.show(); self.back_btn.setEnabled(False)
         self.proceed_btn.show(); self.proceed_btn.setEnabled(True)
         self.return_btn.show(); self.return_btn.setEnabled(True)
+        self.use_web_btn.show(); self.use_web_btn.setEnabled(True)
+        self.qrcode_image_label.show()
         self.debug_shift_slider.show()
         self.video_pos_label.show()
         self.audio_pos_label.show()
@@ -153,6 +171,8 @@ class VjWinEventsMixin:
         self.back_btn.hide(); self.back_btn.setEnabled(False)
         self.proceed_btn.hide(); self.proceed_btn.setEnabled(False)
         self.return_btn.hide(); self.return_btn.setEnabled(False)
+        self.use_web_btn.hide(); self.use_web_btn.setEnabled(False)
+        self.qrcode_image_label.hide()
         self.debug_shift_slider.hide()
         self.video_pos_label.hide()
         self.audio_pos_label.hide()
@@ -218,3 +238,48 @@ class VjWinEventsMixin:
 
     def set_audio_separation(self):
         self.main_player_window_widget.is_audio_separated = self.is_audio_separeted_check.isChecked()
+
+    def start_web_server(self):
+        self.flask_thread = Thread(target=run_web_remote, daemon=True)
+        self.flask_thread.start()
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+        except Exception:
+            ip = "127.0.0.1"
+        finally:
+            s.close()
+        qrcode_img = qrcode.make(f"http://{ip}:5000")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            qrcode_path = os.path.join(temp_dir, "qrcode.png")
+            qrcode_img.save(qrcode_path)
+            qrcode_pixmap = QPixmap(qrcode_path)
+            qrcode_pixmap.scaledToHeight(100)
+            self.qrcode_image_label.setPixmap(qrcode_pixmap)
+        self.qrcode_image_label.show()
+        self.use_web_btn.setText("End Web Remote")
+
+    def terminate_web_server(self):
+        ...
+        self.qrcode_image_label.hide()
+        self.use_web_btn.setText("Start Web Remote")
+
+    def use_web_server(self):
+        if self.use_web_btn.text() == "Start Web Remote":
+            self.start_web_server()
+        else:
+            self.terminate_web_server()
+
+    @Slot(RequestType)
+    def web_request_handler(self, request_type: RequestType):
+        if request_type == RequestType.PLAY:
+            self.play_player()
+        elif request_type == RequestType.PAUSE:
+            self.pause_player()
+        elif request_type == RequestType.PROCEED:
+            self.move_playlist(movement=1)
+        elif request_type == RequestType.RETURN:
+            self.move_playlist(movement=-1)
+
+

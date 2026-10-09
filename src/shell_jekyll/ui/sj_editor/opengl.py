@@ -17,7 +17,7 @@ logger = logging.getLogger("shell_jekyll.opengl")
 
 MAX_LAYERS : int = MAX_LAYER
 
-SHADER_DIR = Path(__file__).resolve().parents[1] / "shaders" / "utils"
+SHADER_DIR = Path(__file__).resolve().parents[2] / "shaders" / "utils"
 DEFAULT_VERTEX_SHADER = SHADER_DIR / "vertex_shader.glsl"
 DEFAULT_FRAGMENT_SHADER = SHADER_DIR / "alpha_blending.glsl"
 DEFAULT_EFFECT_SHADER = SHADER_DIR / "user_effect_default.glsl"

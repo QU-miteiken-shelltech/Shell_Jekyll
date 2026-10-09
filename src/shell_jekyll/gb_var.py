@@ -4,13 +4,18 @@ from typing import Optional, Dict, Any
 
 from shell_jekyll.style import (
     dark_default, pure_skyblue,
-    kawaii_pink, elegant_light
+    kawaii_pink, elegant_light,
+    cyberpunk_neon, high_contrast,
+    warm_night
     )
 styles = {
     "dark_default" : dark_default,
     "pure_skyblue" : pure_skyblue,
     "kawaii_pink" : kawaii_pink,
     "elegant_light" : elegant_light,
+    "cyberpunk_neon" : cyberpunk_neon,
+    "high_contrast" : high_contrast,
+    "warm_night" : warm_night,
 }
 style_script: Any = dark_default
 

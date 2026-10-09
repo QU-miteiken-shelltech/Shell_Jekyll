@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QWidget
 
 from shell_jekyll.ui.sj_player.main_ui.vj_win_ui import VjWinUIMixin
 from shell_jekyll.ui.sj_player.main_ui.vj_win_events import VjWinEventsMixin, PlayListObj
+from shell_jekyll.ui.sj_player.remote_app import bridge, RequestType
 from shell_jekyll import gb_var as gb_var_global
 
 class VjUserUi(QWidget,
@@ -22,5 +23,7 @@ class VjUserUi(QWidget,
         self.current_playlist: PlayListObj = PlayListObj(
             [], video_list=None, audio_list=None
         )
+
+        bridge.flask_sig.connect(self.web_request_handler)
 
         self._init_ui()

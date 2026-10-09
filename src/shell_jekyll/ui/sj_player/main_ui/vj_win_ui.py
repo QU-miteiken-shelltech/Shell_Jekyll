@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QWidget, QListWidget, QSlider,
     QCheckBox
 )
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QPixmap
 from shell_jekyll.ui.sj_player.player_win import PlayerWin
 
 from enum import StrEnum
@@ -30,6 +30,12 @@ class VjWinUIMixin:
         # main_lo.addWidget(self.main_player_window_widget, stretch=2)
 
         control_panel_lo = QVBoxLayout()
+
+        go_to_editor_btn = QPushButton("Go to Jekyll Editor")
+        go_to_editor_btn.clicked.connect(self.go_to_editor)
+        control_panel_lo.addWidget(go_to_editor_btn)
+
+        control_panel_lo.addStretch()
 
         play_list_lo = QHBoxLayout()
         self.video_list = QListWidget()
@@ -108,12 +114,14 @@ class VjWinUIMixin:
 
         control_panel_lo.addStretch()
 
+        setter_lo = QHBoxLayout()
         self.set_btn = QPushButton("Set")
-        control_panel_lo.addWidget(self.set_btn)
         self.set_btn.clicked.connect(self.set_mpv_player)
+        setter_lo.addWidget(self.set_btn)
         self.display_btn = QPushButton("Display")
-        control_panel_lo.addWidget(self.display_btn)
         self.display_btn.clicked.connect(self.display_video)
+        setter_lo.addWidget(self.display_btn)
+        control_panel_lo.addLayout(setter_lo)
 
         self.play_btn = QPushButton("Play")
         control_panel_lo.addWidget(self.play_btn)
@@ -136,6 +144,17 @@ class VjWinUIMixin:
         control_panel_lo.addWidget(self.return_btn)
         self.return_btn.clicked.connect(lambda: self.move_playlist(movement=-1))
         self.return_btn.hide()
+
+        control_panel_lo.addStretch()
+
+        self.use_web_btn = QPushButton("Start Web Remote")
+        self.use_web_btn.clicked.connect(self.use_web_server)
+        self.use_web_btn.hide()
+        control_panel_lo.addWidget(self.use_web_btn)
+        self.qrcode_image_label = QLabel()
+        self.qrcode_image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.qrcode_image_label.hide()
+        control_panel_lo.addWidget(self.qrcode_image_label)
 
         control_panel_lo.addStretch()
 

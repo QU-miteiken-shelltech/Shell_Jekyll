@@ -3,6 +3,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QMainWindow
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import QSettings
 
 from shell_jekyll.api import configure_surface_format
 from shell_jekyll.ui.sj_editor.main_win.main_win import MainUserUi
@@ -17,7 +18,9 @@ def main():
     app.setApplicationName("Shell_Jekyll")
     app.setWindowIcon(QIcon(str(Path(__file__).resolve().parent / "_resources/icon.jpg")))
 
-    use_style = sys.argv[1] if len(sys.argv) > 1 else "dark_default"
+    settings = QSettings("Shell Tech", "Shell Jekyll")
+    default_style = settings.value("default_style_sheet", "dark_default")
+    use_style = sys.argv[1] if len(sys.argv) > 1 else default_style
     gb_var_global.style_script = gb_var_global.styles.get(use_style, gb_var_global.styles["dark_default"])
 
     window = QMainWindow()

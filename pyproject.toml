@@ -23,7 +23,8 @@ dependencies = [
   "numpy",
   "cel-expr-python",
   "psutil",
-  "python-mpv"
+  "Flask",
+  "qrcode"
 ]
 requires-python = ">=3.12"
 authors = [

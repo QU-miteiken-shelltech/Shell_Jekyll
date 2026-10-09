@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 from shell_jekyll.ui.sj_editor.expression_editor import ExpressionEditor
 from shell_jekyll.ui.sj_editor.ui_utils import flash_button
 
-PRESETS_PATH = Path(__file__).resolve().parents[1] / "_resources" / "expression_presets.json"
+PRESETS_PATH = Path(__file__).resolve().parents[2] / "_resources" / "expression_presets.json"
 
 
 class TCLExpressionWidget(QWidget):

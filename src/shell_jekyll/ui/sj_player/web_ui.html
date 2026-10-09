@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>リモートコントローラ</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin-top: 40px;
+        }
+        .controller {
+            display: grid;
+            grid-template-columns: repeat(2, 140px);
+            gap: 16px;
+            justify-content: center;
+            margin: 24px 0;
+        }
+        .controller button {
+            padding: 24px 0;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .controller button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Remote Controller</h1>
+
+    <div class="controller">
+        <button data-action="play">▶ play</button>
+        <button data-action="pause">⏸ pause</button>
+        <button data-action="proceed">⏭ proceed</button>
+        <button data-action="return">⏮ return</button>
+    </div>
+
+    <p id="resultMessage"></p>
+
+    <script>
+        const resultElement = document.getElementById('resultMessage');
+        const buttons = document.querySelectorAll('.controller button');
+
+        buttons.forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const action = btn.dataset.action;
+                resultElement.style.color = "";
+                resultElement.textContent = `Sending ${action} ...`;
+                buttons.forEach((b) => (b.disabled = true));
+
+                try {
+                    const response = await fetch(`/${action}`, {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        resultElement.textContent = `Success: ${data.message}`;
+                        resultElement.style.color = "green";
+                    } else {
+                        resultElement.textContent = `Failed: ${data.message}`;
+                        resultElement.style.color = "red";
+                    }
+                } catch (error) {
+                    resultElement.textContent = `Communication Error: ${error}`;
+                    resultElement.style.color = "red";
+                } finally {
+                    buttons.forEach((b) => (b.disabled = false));
+                }
+            });
+        });
+    </script>
+</body>
+</html>
