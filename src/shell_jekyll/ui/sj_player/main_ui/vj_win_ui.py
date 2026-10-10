@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QCheckBox, QGroupBox
 )
 from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtMultimedia import QMediaDevices
 from shell_jekyll.ui.sj_player.player_win import PlayerWin
 
 from enum import StrEnum
@@ -108,7 +109,6 @@ class VjWinUIMixin:
 
         playlist_inner_lo.addLayout(play_list_lo)
 
-        # ボタンを「編集 / 並べ替え / ファイル」の3グループに分けて1行に並べる
         video_list_op_lo = QHBoxLayout()
         video_list_op_lo.setSpacing(6)
 
@@ -187,12 +187,28 @@ class VjWinUIMixin:
             self.display_selection_combo.addItem(screen.name())
         settings_form_lo.addWidget(self.display_selection_combo, 2, 1)
 
+        audio_device_selection_label = QLabel("Audio Device to Use")
+        settings_form_lo.addWidget(audio_device_selection_label, 3, 0)
+        self.audio_device_selection_combo = QComboBox()
+        self.audio_device_selection_combo.clear()
+        audio_devices = QMediaDevices.audioOutputs()
+        self.audio_devices_dict = {}
+        for audio_device in audio_devices:
+            self.audio_devices_dict[audio_device.description()] = audio_device
+            self.audio_device_selection_combo.addItem(audio_device.description())
+        settings_form_lo.addWidget(self.audio_device_selection_combo, 3, 1)
+
+        shift_audio_label = QLabel("Shift Audio")
+        settings_form_lo.addWidget(shift_audio_label, 4, 0)
+        self.shift_audio_forward_input = QLineEdit("0")
+        self.shift_audio_forward_input.setValidator(QIntValidator())
+        settings_form_lo.addWidget(self.shift_audio_forward_input, 4, 1)
         settings_inner_lo.addLayout(settings_form_lo)
 
-        self.is_audio_separeted_check = QCheckBox("Audio Separated")
-        self.is_audio_separeted_check.setChecked(True)
-        self.is_audio_separeted_check.checkStateChanged.connect(self.set_audio_separation)
-        settings_inner_lo.addWidget(self.is_audio_separeted_check)
+        self.do_mute_video_check = QCheckBox("Mute Video")
+        self.do_mute_video_check.setChecked(True)
+        self.do_mute_video_check.checkStateChanged.connect(self.toggle_video_muting)
+        settings_inner_lo.addWidget(self.do_mute_video_check)
 
         control_panel_lo.addWidget(settings_group)
 
@@ -215,9 +231,13 @@ class VjWinUIMixin:
         # 非表示のときに空の枠が残らないようにしている
         transport_lo = QHBoxLayout()
         transport_lo.setSpacing(8)
+        self.reload_and_play_btn = QPushButton("↻▶ Load and Play")
+        transport_lo.addWidget(self.reload_and_play_btn)
+        self.reload_and_play_btn.clicked.connect(lambda: self.play_player(do_reload=True))
+        self.reload_and_play_btn.hide()
         self.play_btn = QPushButton("▶ Play")
         transport_lo.addWidget(self.play_btn)
-        self.play_btn.clicked.connect(self.play_player)
+        self.play_btn.clicked.connect(lambda: self.play_player(do_reload=False))
         self.play_btn.hide()
         self.pause_btn = QPushButton("⏸ Pause")
         transport_lo.addWidget(self.pause_btn)
@@ -256,16 +276,30 @@ class VjWinUIMixin:
         debug_group, debug_inner_lo = self._make_group("Debug")
 
         media_pos_lo = QHBoxLayout()
-        self.video_pos_label = QLabel("0")
+        self.video_pos_label = QLabel("V ")
         self.video_pos_label.hide()
         media_pos_lo.addWidget(self.video_pos_label)
-        self.audio_pos_label = QLabel("0")
+        self.video_pos_input = QLineEdit("0")
+        self.video_pos_input.setFixedWidth(65)
+        self.video_pos_input.setValidator(QIntValidator())
+        self.video_pos_input.editingFinished.connect(self.sync_all_media_timeline_input)
+        self.video_pos_input.hide()
+        media_pos_lo.addWidget(self.video_pos_input)
+        self.audio_pos_label = QLabel("A ")
         self.audio_pos_label.hide()
         media_pos_lo.addWidget(self.audio_pos_label)
+        self.audio_pos_input = QLineEdit("0")
+        self.audio_pos_input.setFixedWidth(65)
+        self.audio_pos_input.setValidator(QIntValidator())
+        self.audio_pos_input.editingFinished.connect(self.sync_all_media_timeline_input)
+        self.audio_pos_input.hide()
+        media_pos_lo.addWidget(self.audio_pos_input)
+        media_pos_lo.addStretch()
         self.debug_shift_label = QLabel("0")
         self.debug_shift_label.hide()
         media_pos_lo.addWidget(self.debug_shift_label)
         debug_inner_lo.addLayout(media_pos_lo)
+        debug_shift_lo = QHBoxLayout()
         self.debug_shift_slider = QSlider()
         self.debug_shift_slider.setMinimum(-160)
         self.debug_shift_slider.setMaximum(160)
@@ -279,7 +313,7 @@ class VjWinUIMixin:
             QSlider::groove:horizontal {
                 border: none;
                 height: 4px;
-                background: #CCCCCC; /* レール全体の色 */
+                background: #CCCCCC; 
                 border-radius: 2px;
             }
             QSlider::sub-page:horizontal {
@@ -293,12 +327,29 @@ class VjWinUIMixin:
                 border: none;
                 width: 16px;
                 height: 16px;
-                margin: -6px 0; /* レールの中心にツマミを配置 */
-                border-radius: 8px; /* 丸型ツマミ */
+                margin: -6px 0;
+                border-radius: 8px; 
+            }
+            QSlider::handle:horizontal[alert="true"] {
+                background: #FF0000;
+                border: none;
+                width: 16px;
+                height: 16px;
+                margin: -6px 0;
+                border-radius: 8px; 
             }
         """)
         self.debug_shift_slider.hide()
-        debug_inner_lo.addWidget(self.debug_shift_slider)
+        debug_shift_lo.addWidget(self.debug_shift_slider)
+        shift_standard_combo = QComboBox()
+        shift_standard_combo.clear()
+        shift_standard_combo.addItems(
+            ["ITU-R BT.1359-1", "EBU R37", "ATSC IS-191"]
+        )
+        shift_standard_combo.currentTextChanged.connect(self.define_tolerence)
+        self.low_tolerence = -125; self.up_tolerence = 45
+        debug_shift_lo.addWidget(shift_standard_combo)
+        debug_inner_lo.addLayout(debug_shift_lo)
         sync_audio_lo = QHBoxLayout()
         sync_audio_lo.setSpacing(8)
         sync_audio_btn = QPushButton("Debug Shift")

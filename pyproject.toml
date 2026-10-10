@@ -24,7 +24,8 @@ dependencies = [
   "cel-expr-python",
   "psutil",
   "Flask",
-  "qrcode"
+  "qrcode",
+  "pillow"
 ]
 requires-python = ">=3.12"
 authors = [

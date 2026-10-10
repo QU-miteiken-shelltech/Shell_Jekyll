@@ -129,6 +129,9 @@ class VjWinEventsMixin:
         current_selected_audio_row = self.audio_list.currentRow()
         self.video_list.setCurrentRow(current_selected_audio_row)
 
+    def toggle_video_muting(self):
+        self.main_player_window_widget.mute_video(do_mute_video=self.do_mute_video_check.isChecked())
+
     def set_mpv_player(self):
         if self.set_btn.text() == "Set":
             self.set_player()
@@ -144,7 +147,11 @@ class VjWinEventsMixin:
         self.main_player_window_widget.audio_channels = self.audio_channel_input.text().strip()
         self.main_player_window_widget.set_media(index=0)
         self.main_player_window_widget.is_prepared = True
+        self.main_player_window_widget.video_audio_outputer.setDevice(self.audio_devices_dict[self.audio_device_selection_combo.currentText()])
+        self.main_player_window_widget.audio_audio_outputer.setDevice(self.audio_devices_dict[self.audio_device_selection_combo.currentText()])
+        self.main_player_window_widget.do_mute_video = self.do_mute_video_check.isChecked()
         self.play_btn.show(); self.play_btn.setEnabled(True)
+        self.reload_and_play_btn.show(); self.reload_and_play_btn.setEnabled(True)
         self.pause_btn.show(); self.pause_btn.setEnabled(False)
         self.back_btn.show(); self.back_btn.setEnabled(False)
         self.proceed_btn.show(); self.proceed_btn.setEnabled(True)
@@ -154,6 +161,8 @@ class VjWinEventsMixin:
         self.debug_shift_slider.show()
         self.video_pos_label.show()
         self.audio_pos_label.show()
+        self.video_pos_input.show()
+        self.audio_pos_input.show()
         self.debug_shift_label.show()
         self.debug_shift_slider.setValue(0)
         self.set_btn.setText("Unset")
@@ -167,6 +176,7 @@ class VjWinEventsMixin:
         self.main_player_window_widget.playlist = []
         self.main_player_window_widget.is_prepared = False
         self.play_btn.hide(); self.play_btn.setEnabled(False)
+        self.reload_and_play_btn.hide(); self.reload_and_play_btn.setEnabled(False)
         self.pause_btn.hide(); self.pause_btn.setEnabled(False)
         self.back_btn.hide(); self.back_btn.setEnabled(False)
         self.proceed_btn.hide(); self.proceed_btn.setEnabled(False)
@@ -176,23 +186,27 @@ class VjWinEventsMixin:
         self.debug_shift_slider.hide()
         self.video_pos_label.hide()
         self.audio_pos_label.hide()
+        self.video_pos_input.hide()
+        self.audio_pos_input.hide()
         self.debug_shift_label.hide()
         self.set_btn.setText("Set")
 
     def display_video(self):
         w = self.main_player_window_widget
         display_selected = self.screen_dict[self.display_selection_combo.currentText()]
-        print(self.screen_dict)
-        self.main_player_window_widget.setScreen(display_selected)
-        self.main_player_window_widget.show()
-        self.main_player_window_widget.showFullScreen()
-        w.raise_()          
+        w.setScreen(display_selected)
+        w.move(display_selected.geometry().topLeft())  
+        w.showFullScreen()
+        w.raise_()
         w.activateWindow()
 
-    def play_player(self):
-        self.main_player_window_widget.playlist = list(self.current_playlist)
-        self.main_player_window_widget.set_media(index=None)
+    def play_player(self, do_reload: bool=False):
+        if do_reload:
+            self.main_player_window_widget.playlist = list(self.current_playlist)
+            self.main_player_window_widget.set_media(index=None)
+            self.main_player_window_widget.audio_player.setPosition(int(self.shift_audio_forward_input.text()))
         self.play_btn.setEnabled(False)
+        self.reload_and_play_btn.setEnabled(False)
         self.pause_btn.setEnabled(True)
         self.back_btn.setEnabled(True)
         self.proceed_btn.setEnabled(True)
@@ -201,6 +215,7 @@ class VjWinEventsMixin:
 
     def pause_player(self):
         self.play_btn.setEnabled(True)
+        self.reload_and_play_btn.setEnabled(True)
         self.pause_btn.setEnabled(False)
         self.back_btn.setEnabled(True)
         self.proceed_btn.setEnabled(True)
@@ -211,6 +226,7 @@ class VjWinEventsMixin:
         self.main_player_window_widget.playlist = list(self.current_playlist)
         self.main_player_window_widget.set_media(index=None)
         self.play_btn.setEnabled(True)
+        self.reload_and_play_btn.setEnabled(True)
         self.pause_btn.setEnabled(False)
         self.back_btn.setEnabled(False)
         self.proceed_btn.setEnabled(True)
@@ -219,6 +235,7 @@ class VjWinEventsMixin:
 
     def move_playlist(self, movement: int=1):
         self.play_btn.setEnabled(True)
+        self.reload_and_play_btn.setEnabled(True)
         self.pause_btn.setEnabled(False)
         self.back_btn.setEnabled(False)
         self.proceed_btn.setEnabled(True)
@@ -229,15 +246,35 @@ class VjWinEventsMixin:
     def on_media_pos_changed(self, positions: tuple[int, int, int]):
         self.debug_shift_slider.setValue(int(positions[0]))
         self.debug_shift_label.setText(f"Shift : {positions[0]}")
-        self.video_pos_label.setText(f"V : {positions[1]}")
-        self.audio_pos_label.setText(f"A : {positions[2]}")
+        self.video_pos_input.setText(f"{positions[1]}")
+        self.audio_pos_input.setText(f"{positions[2]}")
+        is_alert = positions[0] < self.low_tolerence or positions[0] > self.up_tolerence
+        if self.debug_shift_slider.property("alert") != is_alert:
+            self.debug_shift_slider.setProperty("alert", is_alert)
+            self.debug_shift_slider.style().unpolish(self.debug_shift_slider)
+            self.debug_shift_slider.style().polish(self.debug_shift_slider)
 
-    def on_playlist_index_changed(self, current_index: int):
+    def define_tolerence(self, standard: str):
+        if standard == "ITU-R BT.1359-1":
+            self.low_tolerence = -125
+            self.up_tolerence = 45
+        elif standard == "EBU R37":
+            self.low_tolerence = -60
+            self.up_tolerence = 40
+        elif standard == "ATSC IS-191":
+            self.low_tolerence = -45
+            self.up_tolerence = 15
+
+    def on_playlist_index_changed(self, current_index: int, media_duration: int):
         self.video_list.setCurrentRow(current_index)
         self.audio_list.setCurrentRow(current_index)
 
-    def set_audio_separation(self):
-        self.main_player_window_widget.is_audio_separated = self.is_audio_separeted_check.isChecked()
+    def sync_all_media_timeline_input(self):
+        val = int(self.sender().text())
+        if self.sender() != self.audio_pos_input: self.audio_pos_input.setText(str(val))
+        if self.sender() != self.video_pos_input: self.video_pos_input.setText(str(val))
+        self.main_player_window_widget.set_pos(val)
+        self.debug_shift_label.setText("0")
 
     def start_web_server(self):
         self.flask_thread = Thread(target=run_web_remote, daemon=True)
@@ -274,7 +311,7 @@ class VjWinEventsMixin:
     @Slot(RequestType)
     def web_request_handler(self, request_type: RequestType):
         if request_type == RequestType.PLAY:
-            self.play_player()
+            self.play_player(do_reload=True)
         elif request_type == RequestType.PAUSE:
             self.pause_player()
         elif request_type == RequestType.PROCEED:
