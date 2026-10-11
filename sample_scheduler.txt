@@ -1,0 +1,31 @@
+DEF
+    DO <SET>
+    DO <DISPLAY>
+    DO <PLAY>
+
+    DO <PROCEED>
+    DO <PLAY>
+    DO <WAIT5>
+
+    DO <PROCEED>
+    DO <PLAY>
+
+    DO unset_player()
+AS $ACTION1$
+
+DEF 20261011035/202610101150 AS $TL$
+
+CALL $ACTION1$ FIN 
+AT $TL$ 
+
+CALL 
+    DO <DISPLAY>
+    DO <PLAY>
+
+    DO <RETURN>
+    DO <PLAY>
+    DO <WAIT5>
+
+    $ACTION1$
+FIN 
+AT 202610101105/202610101320/202610101405

@@ -13,6 +13,7 @@ import qrcode
 
 from shell_jekyll.ui.sj_player.remote_app import RequestType, run_web_remote
 from shell_jekyll.ui.sj_editor.main_win.main_win import MainUserUi
+from shell_jekyll.ui.sj_player.main_ui.vj_win_actionman import defined_alias
 
 class PlayListObj(UserList):
     def __init__(self, initlist, video_list, audio_list):
@@ -145,8 +146,8 @@ class VjWinEventsMixin:
         self.audio_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.main_player_window_widget.playlist = list(self.current_playlist)
         self.main_player_window_widget.audio_channels = self.audio_channel_input.text().strip()
-        self.main_player_window_widget.set_media(index=0)
         self.main_player_window_widget.is_prepared = True
+        self.main_player_window_widget.set_media(index=0)
         self.main_player_window_widget.video_audio_outputer.setDevice(self.audio_devices_dict[self.audio_device_selection_combo.currentText()])
         self.main_player_window_widget.audio_audio_outputer.setDevice(self.audio_devices_dict[self.audio_device_selection_combo.currentText()])
         self.main_player_window_widget.do_mute_video = self.do_mute_video_check.isChecked()
@@ -291,8 +292,11 @@ class VjWinEventsMixin:
         with tempfile.TemporaryDirectory() as temp_dir:
             qrcode_path = os.path.join(temp_dir, "qrcode.png")
             qrcode_img.save(qrcode_path)
-            qrcode_pixmap = QPixmap(qrcode_path)
-            qrcode_pixmap.scaledToHeight(100)
+            qrcode_pixmap = QPixmap(qrcode_path).scaled(
+                180, 180, 
+                Qt.AspectRatioMode.KeepAspectRatio, 
+                Qt.TransformationMode.SmoothTransformation
+            )
             self.qrcode_image_label.setPixmap(qrcode_pixmap)
         self.qrcode_image_label.show()
         self.use_web_btn.setText("End Web Remote")
@@ -311,12 +315,18 @@ class VjWinEventsMixin:
     @Slot(RequestType)
     def web_request_handler(self, request_type: RequestType):
         if request_type == RequestType.PLAY:
-            self.play_player(do_reload=True)
+            self.play_player(do_reload=False)
         elif request_type == RequestType.PAUSE:
             self.pause_player()
         elif request_type == RequestType.PROCEED:
             self.move_playlist(movement=1)
         elif request_type == RequestType.RETURN:
             self.move_playlist(movement=-1)
+
+    @Slot(str)
+    def scheduler_command_handler(self, command: str):
+        print(defined_alias.get(command, command))
+        exec(defined_alias.get(command, command))
+
 
 

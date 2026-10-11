@@ -1,0 +1,12 @@
+import datetime; import asyncio; 
+
+def action_1:
+    asyncio.sleep(CALL)
+    asyncio.sleep($ACTION1$)
+
+for t in AT:
+    t_now = datetime.now()
+    t_scheduled = datetime.strptime(t, '%Y%m%d%H%M%S')
+    remaining_time = t_scheduled - t_now
+    if remaining_time > 0: asyncio.sleep(remaining_time)
+    action_1)

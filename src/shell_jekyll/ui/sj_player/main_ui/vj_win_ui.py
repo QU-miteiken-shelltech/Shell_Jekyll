@@ -12,6 +12,8 @@ from shell_jekyll.ui.sj_player.player_win import PlayerWin
 
 from enum import StrEnum
 
+from shell_jekyll.ui.sj_player.main_ui.vj_win_actionman import ActionManagerDialog
+
 class PlayMethods(StrEnum):
     MPV = "ffmpeg mpv (Default)"
     NUAMIM = "nuanim (nudec)"
@@ -76,10 +78,21 @@ class VjWinUIMixin:
         control_panel_lo = QVBoxLayout()
         control_panel_lo.setSpacing(12)
 
+        top_bar_lo = QHBoxLayout()
         go_to_editor_btn = QPushButton("← Go to Jekyll Editor")
-        go_to_editor_btn.setToolTip("Jekyll エディタ画面へ戻ります")
+        go_to_editor_btn.setToolTip("Jekyll Editor へ")
         go_to_editor_btn.clicked.connect(self.go_to_editor)
-        control_panel_lo.addWidget(go_to_editor_btn)
+        top_bar_lo.addWidget(go_to_editor_btn)
+        open_action_manager_btn = QPushButton("Action Manager")
+        open_action_manager_btn.setToolTip("アクションマネージャーへ")
+        open_action_manager_btn.clicked.connect(
+            ActionManagerDialog(
+                parent=self,
+                player_widget=self.main_player_window_widget
+            ).exec
+        )
+        top_bar_lo.addWidget(open_action_manager_btn)
+        control_panel_lo.addLayout(top_bar_lo)
 
         # ---------------- Playlist ----------------
         playlist_group, playlist_inner_lo = self._make_group("Playlist")

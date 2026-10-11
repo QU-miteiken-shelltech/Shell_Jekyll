@@ -3,12 +3,13 @@ from PySide6.QtWidgets import QWidget
 
 from shell_jekyll.ui.sj_player.main_ui.vj_win_ui import VjWinUIMixin
 from shell_jekyll.ui.sj_player.main_ui.vj_win_events import VjWinEventsMixin, PlayListObj
+from shell_jekyll.ui.sj_player.main_ui.vj_win_actionman import actionman_bridge
 from shell_jekyll.ui.sj_player.remote_app import bridge, RequestType
 from shell_jekyll import gb_var as gb_var_global
 
 class VjUserUi(QWidget,
                VjWinUIMixin,
-               VjWinEventsMixin
+               VjWinEventsMixin,
                ):
 
     def __init__(self):
@@ -25,5 +26,6 @@ class VjUserUi(QWidget,
         )
 
         bridge.flask_sig.connect(self.web_request_handler)
+        actionman_bridge.command_issued_sig.connect(self.scheduler_command_handler)
 
         self._init_ui()
