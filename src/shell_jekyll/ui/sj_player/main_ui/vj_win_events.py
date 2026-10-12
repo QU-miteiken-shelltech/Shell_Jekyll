@@ -14,6 +14,7 @@ import qrcode
 from shell_jekyll.ui.sj_player.remote_app import RequestType, run_web_remote
 from shell_jekyll.ui.sj_editor.main_win.main_win import MainUserUi
 from shell_jekyll.ui.sj_player.vj_win_actionman import defined_alias
+from shell_jekyll.ui.sj_player.shell_eqcorrect import ShellEqcorrectPlugin
 
 class PlayListObj(UserList):
     def __init__(self, initlist, video_list, audio_list):
@@ -55,6 +56,13 @@ class VjWinEventsMixin:
         win = self.window()
         if isinstance(win, QMainWindow):
             win.setCentralWidget(editor_ui)
+
+    def open_eqcorrect_plugin(self):
+        shell_eqcorrect_plugin = ShellEqcorrectPlugin(
+            parent=self
+        )
+        shell_eqcorrect_plugin.audio_playlist = [x[1] for x in self.current_playlist]
+        shell_eqcorrect_plugin.exec()
 
     def add_video_to_playlist(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Open a video file", "", "All files (*)")

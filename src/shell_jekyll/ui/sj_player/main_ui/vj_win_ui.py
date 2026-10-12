@@ -13,7 +13,6 @@ from shell_jekyll.ui.sj_player.player_win import PlayerWin
 from enum import StrEnum
 
 from shell_jekyll.ui.sj_player.vj_win_actionman import ActionManagerDialog
-from shell_jekyll.ui.sj_player.shell_eqcorrect import ShellEqcorrectPlugin
 
 class PlayMethods(StrEnum):
     MPV = "ffmpeg mpv (Default)"
@@ -95,9 +94,7 @@ class VjWinUIMixin:
         top_bar_lo.addWidget(open_action_manager_btn)
         open_ercorrect_btn = QPushButton("Open Shell EQcorrect")
         open_ercorrect_btn.setToolTip("Shell EQcorrect GUIツールを起動")
-        open_ercorrect_btn.clicked.connect(
-            ShellEqcorrectPlugin(self).exec
-        )
+        open_ercorrect_btn.clicked.connect(self.open_eqcorrect_plugin)
         top_bar_lo.addWidget(open_ercorrect_btn)
         control_panel_lo.addLayout(top_bar_lo)
 

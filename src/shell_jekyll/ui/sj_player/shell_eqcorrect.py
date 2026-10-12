@@ -52,7 +52,9 @@ class ShellEqcorrectPlugin(QDialog):
 
     DOWNLOAD_URL = "https://pub-7745c6e91aa147a0b81b964b501997b3.r2.dev/share/eqcorrect"
 
-    def __init__(self, parent=None):
+    def __init__(self, 
+                 parent=None
+                 ):
         super().__init__(parent)
         self.setAutoFillBackground(False)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -63,6 +65,7 @@ class ShellEqcorrectPlugin(QDialog):
         self.download_reply = None
         self.download_file = None
         self.download_target_path = None
+        self.audio_playlist = []
 
         dialog_lo = QVBoxLayout()
 
@@ -88,9 +91,12 @@ class ShellEqcorrectPlugin(QDialog):
         dialog_lo.addStretch()
 
         load_btns_lo = QHBoxLayout()
-        open_audio_file = QPushButton("Open Audio")
+        use_playlist_as_audio = QPushButton("Use Playlist")
+        use_playlist_as_audio.clicked.connect(self.use_play_list)
+        load_btns_lo.addWidget(use_playlist_as_audio)
+        open_audio_file = QPushButton("Add Audio")
         open_audio_file.clicked.connect(self.open_audio_file)
-        self.audio_file_path = None
+        self.audio_file_paths = []
         load_btns_lo.addWidget(open_audio_file)
         open_req_files = QPushButton("Open REQ")
         open_req_files.clicked.connect(self.open_req_files)
@@ -133,6 +139,7 @@ class ShellEqcorrectPlugin(QDialog):
     # ------------------------------------------------------------------
     # ファイル選択
     # ------------------------------------------------------------------
+    
     def select_exe(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Open an executable file", "", "Executable file (*)")
         if not filename:
@@ -140,12 +147,22 @@ class ShellEqcorrectPlugin(QDialog):
         self.exe_path_label.setText(f"Executable path : {filename}")
         self.executable_path = filename
 
+    def use_play_list(self):
+        self.audio_file_paths = self.audio_playlist
+        if len(self.audio_file_paths) > 1:
+            self.audio_file_label.setText(f"Audio : {self.audio_file_paths[0]} ,etc")
+        elif len(self.audio_file_paths) == 1:
+            self.audio_file_label.setText(f"Audio : {self.audio_file_paths[0]}")
+
     def open_audio_file(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Open an audio file", "", "Audio file (*)")
         if not filename:
             return
-        self.audio_file_path = filename
-        self.audio_file_label.setText(f"Audio : {self.audio_file_path}")
+        self.audio_file_paths.append(filename)
+        if len(self.audio_file_paths) > 1:
+            self.audio_file_label.setText(f"Audio : {self.audio_file_paths[0]} ,etc")
+        elif len(self.audio_file_paths) == 1:
+            self.audio_file_label.setText(f"Audio : {self.audio_file_paths[0]}")
 
     def open_req_files(self):
         req_dir = QFileDialog.getExistingDirectory(self, "Select a folder")
@@ -232,64 +249,86 @@ class ShellEqcorrectPlugin(QDialog):
     # 実行（QProcess + スピナー）
     # ------------------------------------------------------------------
     def exec_shell_eqcorrect(self):
+        if self.process is not None:
+            return  # already running
+        if self.executable_path is None or not self.audio_file_paths \
+                or self.req_files_path is None or self.out_dir is None:
+            return
+
         if os.name != "nt":
             mode = os.stat(self.executable_path).st_mode
             os.chmod(self.executable_path, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-        if self.process is not None:
-            return  # 実行中は二重起動しない
-        if self.executable_path is None or self.audio_file_path is None \
-                or self.req_files_path is None or self.out_dir is None:
+
+        self._queue = list(self.audio_file_paths)
+        self._total = len(self._queue)
+        self._done_count = 0
+        self._failed = False
+        self.exec_btn.setEnabled(False)
+        self.spinner.start()
+        self._start_next()
+
+    def _finish_running_state(self):
+        self.spinner.stop()
+        self.exec_btn.setEnabled(True)
+
+    def _start_next(self):
+        if not self._queue:
+            self._on_all_finished()
             return
+
+        audio_file_path = self._queue.pop(0)
+        self._done_count += 1
         options = self.options_input.text().strip()
-        outfile_path = Path(self.out_dir) / f"{Path(self.audio_file_path).stem}.wav"
-        original_renamed_path = Path(self.audio_file_path).resolve().parent / f"{Path(self.audio_file_path).stem}_original.wav"
+        outfile_path = Path(self.out_dir) / f"{Path(audio_file_path).stem}.wav"
+        original_renamed_path = Path(audio_file_path).resolve().parent / f"{Path(audio_file_path).stem}_original.wav"
         i = 1
         while original_renamed_path.exists():
-            original_renamed_path = Path(self.audio_file_path).resolve().parent / f"{Path(self.audio_file_path).stem}_original_{i}.wav"
+            original_renamed_path = Path(audio_file_path).resolve().parent / f"{Path(audio_file_path).stem}_original_{i}.wav"
             i += 1
-        os.rename(self.audio_file_path, str(original_renamed_path))
+        os.rename(audio_file_path, str(original_renamed_path))
 
         args = [str(original_renamed_path), str(self.req_files_path), "-o", str(outfile_path)]
         if options:
             args.extend(options.split(" "))
         args.append("--protect-clip")
 
-        self.process = QProcess(self)
-        self.process.finished.connect(self._on_process_finished)
-        self.process.errorOccurred.connect(self._on_process_error)
-        self.process.start(str(self.executable_path), args)
+        proc = QProcess(self)
+        self.process = proc
+        proc.finished.connect(lambda code, status, p=proc: self._on_process_finished(p, code, status))
+        proc.errorOccurred.connect(lambda err, p=proc: self._on_process_error(p, err))
+        self.status_label.setText(f"Running {self._done_count} of {self._total}...")
+        proc.start(str(self.executable_path), args)
 
-        self.exec_btn.setEnabled(False)
-        self.status_label.setText("Running...")
-        self.spinner.start()
-
-    def _finish_running_state(self):
-        self.spinner.stop()
-        self.exec_btn.setEnabled(True)
-
-    def _on_process_finished(self, exit_code, exit_status):
-        proc = self.process
+    def _on_process_finished(self, proc, exit_code, exit_status):
+        if proc is not self.process:
+            return
         self.process = None
         stdout = bytes(proc.readAllStandardOutput()).decode(errors="replace")
         stderr = bytes(proc.readAllStandardError()).decode(errors="replace")
         proc.deleteLater()
-        self._finish_running_state()
 
-        if exit_status == QProcess.ExitStatus.NormalExit and exit_code == 0:
-            self.status_label.setText("Done")
-            QMessageBox.information(self, "Execution finished", "Execution finished")
-        else:
+        if exit_status != QProcess.ExitStatus.NormalExit or exit_code != 0:
+            self._queue.clear()
+            self._finish_running_state()
             self.status_label.setText(f"Failed (exit code {exit_code})")
             QMessageBox.critical(self, "Execution failed", stderr or stdout or f"Exit code: {exit_code}")
+            return
+        self._start_next()
 
-    def _on_process_error(self, error):
-        # 起動失敗(FailedToStart)のときは finished が来ないのでここで後始末する
+    def _on_all_finished(self):
+        self._finish_running_state()
+        self.status_label.setText("Done")
+        QMessageBox.information(self, "Execution finished", "Execution finished")
+
+    def _on_process_error(self, proc, error):
         if error != QProcess.ProcessError.FailedToStart:
             return
-        proc = self.process
+        if proc is not self.process:
+            return
         self.process = None
         message = proc.errorString()
         proc.deleteLater()
+        self._queue.clear()
         self._finish_running_state()
         self.status_label.setText("Failed to start")
         QMessageBox.critical(self, "Execution failed", message)
