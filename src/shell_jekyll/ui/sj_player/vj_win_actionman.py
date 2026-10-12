@@ -94,9 +94,10 @@ class ActionManagerDialog(QDialog):
         dialog_lo.addStretch()
 
         dialog_btns_lo = QHBoxLayout()
-        execute_btn = QPushButton("Run Schedule")
-        execute_btn.clicked.connect(self.execute_schedule)
-        dialog_btns_lo.addWidget(execute_btn)
+        self.execute_btn = QPushButton("Run Schedule")
+        self.execute_btn.clicked.connect(self.execute_schedule)
+        dialog_btns_lo.addWidget(self.execute_btn)
+        self.is_in_schedule = False
         save_btn = QPushButton("Save Schedule")
         save_btn.clicked.connect(self.save_schedule)
         dialog_btns_lo.addWidget(save_btn)
@@ -140,8 +141,18 @@ class ActionManagerDialog(QDialog):
         selected_item.setText(new_timing.toString())
 
     def execute_schedule(self):
-        self.iterator = iter([self.task_list.item(i).text() for i in range(self.task_list.count())])
-        self.next_step()
+        if not self.is_in_schedule:
+            self.iterator = iter([self.task_list.item(i).text() for i in range(self.task_list.count())])
+            self.execute_btn.setText("Kill Schedule")
+            self.is_in_schedule = True
+            self.next_step()
+        else:
+            self.execute_btn.setText("Run Schedule")
+            self.is_in_schedule = False
+            try:
+                self.player_widget.video_player.mediaStatusChanged.disconnect(self._on_wait_media_end)
+            except:
+                print("Cannot disconnect")
 
     def open_schedule(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Open a schedule file", "", "Schedule File (*.sjschedule)")
