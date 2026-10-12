@@ -15,6 +15,7 @@ from shell_jekyll.ui.sj_player.remote_app import RequestType, run_web_remote
 from shell_jekyll.ui.sj_editor.main_win.main_win import MainUserUi
 from shell_jekyll.ui.sj_player.vj_win_actionman import defined_alias
 from shell_jekyll.ui.sj_player.shell_eqcorrect import ShellEqcorrectPlugin
+from shell_jekyll.ui.sj_player.audio_processing import AudioProcessing
 
 class PlayListObj(UserList):
     def __init__(self, initlist, video_list, audio_list):
@@ -151,6 +152,14 @@ class VjWinEventsMixin:
             self.unset_player()
 
     def set_player(self):
+        if self.do_normalize_loudness_check.isChecked():
+            norm_coe_dict = AudioProcessing.norm_loudness(
+                paths=[x[0] for x in list(self.current_playlist)] + [x[1] for x in list(self.current_playlist)]
+            )
+            self.main_player_window_widget.norm_loudness_coe = norm_coe_dict
+            print(norm_coe_dict)
+        else:
+            self.main_player_window_widget.norm_loudness_coe = {}
         self.video_list.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         self.video_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.audio_list.setAttribute(Qt.WA_TransparentForMouseEvents, True)

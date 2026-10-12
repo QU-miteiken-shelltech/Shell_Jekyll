@@ -44,6 +44,7 @@ class PlayerWin(QWidget):
         self.playlist = playlist
         self.current_index = 0
         self.do_mute_video = do_mute_video
+        self.norm_loudness_coe = {}
 
         self.media_timer = QTimer()
         self.media_timer.setInterval(300)
@@ -68,17 +69,21 @@ class PlayerWin(QWidget):
         if index is not None:
             self.current_index = index
         video_path = self.playlist[self.current_index][0]
+        audio_path = self.playlist[self.current_index][1]
         if video_path and Path(video_path).exists():
             self.video_player.pause()
             self.video_player.setPosition(0)
             self.video_player.setSource(QUrl.fromLocalFile(video_path))
             self.video_audio_outputer.setMuted(self.do_mute_video)
+            if not self.do_mute_video and self.norm_loudness_coe:
+                self.video_audio_outputer.setVolume(self.norm_loudness_coe.get(audio_path, 1.0))
             self.is_video_available = True
-        audio_path = self.playlist[self.current_index][1]
         if audio_path and Path(audio_path).exists():
             self.audio_player.setPosition(0)
             self.audio_player.pause()
             self.audio_player.setSource(QUrl.fromLocalFile(audio_path))
+            if self.norm_loudness_coe:
+                self.audio_audio_outputer.setVolume(self.norm_loudness_coe.get(audio_path, 1.0))
             self.is_audio_available = True
         self.playlist_index_changed_sig.emit(
             self.current_index, min(self.video_player.duration(), self.audio_player.duration())

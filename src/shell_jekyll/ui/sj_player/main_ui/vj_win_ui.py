@@ -222,10 +222,15 @@ class VjWinUIMixin:
         settings_form_lo.addWidget(self.shift_audio_forward_input, 4, 1)
         settings_inner_lo.addLayout(settings_form_lo)
 
+        option_checks_lo = QHBoxLayout()
         self.do_mute_video_check = QCheckBox("Mute Video")
         self.do_mute_video_check.setChecked(True)
         self.do_mute_video_check.checkStateChanged.connect(self.toggle_video_muting)
-        settings_inner_lo.addWidget(self.do_mute_video_check)
+        option_checks_lo.addWidget(self.do_mute_video_check)
+        self.do_normalize_loudness_check = QCheckBox("Normalize loudness")
+        self.do_normalize_loudness_check.setChecked(False)
+        option_checks_lo.addWidget(self.do_normalize_loudness_check)
+        settings_inner_lo.addLayout(option_checks_lo)
 
         control_panel_lo.addWidget(settings_group)
 
