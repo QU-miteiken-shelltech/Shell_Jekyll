@@ -88,6 +88,7 @@ class VjWinEventsMixin:
             from_index=current_selected_index, 
             to_index=current_selected_index - 1
         )
+        self.audio_list.setCurrentRow(current_selected_index - 1)
 
     def move_playlist_down(self):
         current_selected_index = self.video_list.currentRow()
@@ -97,6 +98,8 @@ class VjWinEventsMixin:
             from_index=current_selected_index, 
             to_index=current_selected_index + 1
         )
+        self.audio_list.setCurrentRow(current_selected_index + 1)
+        
 
     def open_playlist(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Open playlist", "", "sjplay file (*.sjplay)")

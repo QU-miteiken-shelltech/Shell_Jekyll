@@ -102,11 +102,11 @@ class ShellEqcorrectPlugin(QDialog):
         load_btns_lo.addWidget(select_out_dir_btn)
         dialog_lo.addLayout(load_btns_lo)
 
-        self.audio_file_label = QLabel("--")
-        dialog_lo.addWidget(self.open_audio_label)
-        self.req_files_label = QLabel("--")
+        self.audio_file_label = QLabel("Audio : --")
+        dialog_lo.addWidget(self.audio_file_label)
+        self.req_files_label = QLabel("REQ : --")
         dialog_lo.addWidget(self.req_files_label)
-        self.out_dir_label = QLabel("--")
+        self.out_dir_label = QLabel("Out : --")
         dialog_lo.addWidget(self.out_dir_label)
 
         self.options_input = QLineEdit("")
@@ -145,21 +145,21 @@ class ShellEqcorrectPlugin(QDialog):
         if not filename:
             return
         self.audio_file_path = filename
-        self.audio_file_label.setText(self.audio_file_path)
+        self.audio_file_label.setText(f"Audio : {self.audio_file_path}")
 
     def open_req_files(self):
         req_dir = QFileDialog.getExistingDirectory(self, "Select a folder")
         if not req_dir:
             return
         self.req_files_path = req_dir
-        self.req_files_label.setText(self.req_files_path)
+        self.req_files_label.setText(f"REQ : {self.req_files_path}")
 
     def select_out_dir(self):
         out_dir = QFileDialog.getExistingDirectory(self, "Select a folder")
         if not out_dir:
             return
         self.out_dir = out_dir
-        self.out_dir_label.setText(self.out_dir)
+        self.out_dir_label.setText(f"Out : {self.out_dir}")
 
     # ------------------------------------------------------------------
     # ダウンロード（QNetworkAccessManager + 進捗バー）
