@@ -13,7 +13,7 @@ import qrcode
 
 from shell_jekyll.ui.sj_player.remote_app import RequestType, run_web_remote
 from shell_jekyll.ui.sj_editor.main_win.main_win import MainUserUi
-from shell_jekyll.ui.sj_player.main_ui.vj_win_actionman import defined_alias
+from shell_jekyll.ui.sj_player.vj_win_actionman import defined_alias
 
 class PlayListObj(UserList):
     def __init__(self, initlist, video_list, audio_list):

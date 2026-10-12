@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QWidget
 
 from shell_jekyll.ui.sj_player.main_ui.vj_win_ui import VjWinUIMixin
 from shell_jekyll.ui.sj_player.main_ui.vj_win_events import VjWinEventsMixin, PlayListObj
-from shell_jekyll.ui.sj_player.main_ui.vj_win_actionman import actionman_bridge
+from shell_jekyll.ui.sj_player.vj_win_actionman import actionman_bridge
 from shell_jekyll.ui.sj_player.remote_app import bridge, RequestType
 from shell_jekyll import gb_var as gb_var_global
 
