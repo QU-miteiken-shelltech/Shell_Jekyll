@@ -102,6 +102,13 @@ class ShellEqcorrectPlugin(QDialog):
         load_btns_lo.addWidget(select_out_dir_btn)
         dialog_lo.addLayout(load_btns_lo)
 
+        self.audio_file_label = QLabel("--")
+        dialog_lo.addWidget(self.open_audio_label)
+        self.req_files_label = QLabel("--")
+        dialog_lo.addWidget(self.req_files_label)
+        self.out_dir_label = QLabel("--")
+        dialog_lo.addWidget(self.out_dir_label)
+
         self.options_input = QLineEdit("")
         self.options_input.setPlaceholderText("Options")
         dialog_lo.addWidget(self.options_input)
@@ -138,18 +145,21 @@ class ShellEqcorrectPlugin(QDialog):
         if not filename:
             return
         self.audio_file_path = filename
+        self.audio_file_label.setText(self.audio_file_path)
 
     def open_req_files(self):
         req_dir = QFileDialog.getExistingDirectory(self, "Select a folder")
         if not req_dir:
             return
         self.req_files_path = req_dir
+        self.req_files_label.setText(self.req_files_path)
 
     def select_out_dir(self):
         out_dir = QFileDialog.getExistingDirectory(self, "Select a folder")
         if not out_dir:
             return
         self.out_dir = out_dir
+        self.out_dir_label.setText(self.out_dir)
 
     # ------------------------------------------------------------------
     # ダウンロード（QNetworkAccessManager + 進捗バー）
@@ -233,6 +243,10 @@ class ShellEqcorrectPlugin(QDialog):
         options = self.options_input.text().strip()
         outfile_path = Path(self.out_dir) / f"{Path(self.audio_file_path).stem}.wav"
         original_renamed_path = Path(self.audio_file_path).resolve().parent / f"{Path(self.audio_file_path).stem}_original.wav"
+        i = 1
+        while original_renamed_path.exists():
+            original_renamed_path = Path(self.audio_file_path).resolve().parent / f"{Path(self.audio_file_path).stem}_original_{i}.wav"
+            i += 1
         os.rename(self.audio_file_path, str(original_renamed_path))
 
         args = [str(original_renamed_path), str(self.req_files_path), "-o", str(outfile_path)]
