@@ -3,6 +3,7 @@ import json
 import socket
 import tempfile
 import os
+from pathlib import Path
 from threading import Thread
 
 from PySide6.QtWidgets import QFileDialog, QMainWindow
@@ -15,7 +16,8 @@ from shell_jekyll.ui.sj_player.remote_app import RequestType, run_web_remote
 from shell_jekyll.ui.sj_editor.main_win.main_win import MainUserUi
 from shell_jekyll.ui.sj_player.vj_win_actionman import defined_alias
 from shell_jekyll.ui.sj_player.shell_eqcorrect import ShellEqcorrectPlugin
-from shell_jekyll.ui.sj_player.audio_processing import AudioProcessing
+from shell_jekyll.audio.audio_processing import AudioProcessing
+from shell_jekyll.ui.sj_player.download_popup import DownloadPopupDialog
 
 class PlayListObj(UserList):
     def __init__(self, initlist, video_list, audio_list):
@@ -89,6 +91,13 @@ class VjWinEventsMixin:
             return
         self.current_playlist.delete(index=current_selected_index)
 
+    def explode_video(self):
+        current_selected_index = self.video_list.currentRow()
+        new_item = AudioProcessing.explode_mov(original_mov_path=self.current_playlist[current_selected_index][0])
+        self.current_playlist.update(
+            index=current_selected_index, item=new_item
+        )
+
     def move_playlist_up(self):
         current_selected_index = self.video_list.currentRow()
         if current_selected_index <= 0:
@@ -108,7 +117,28 @@ class VjWinEventsMixin:
             to_index=current_selected_index + 1
         )
         self.audio_list.setCurrentRow(current_selected_index + 1)
-        
+
+    def _resolve_path_notation(self, 
+                               k: str,
+                               my_dir: str
+                               ):
+        if k.startswith("URL==="):
+            k_splitted = k.split("===")
+            if len(k_splitted) != 3:
+                k = ""
+            else:
+                url = k_splitted[1]
+                download_target_path = k_splitted[2].replace("$SELF$", my_dir)
+                download_popup_dialog = DownloadPopupDialog(self)
+                download_popup_dialog.download_from_urls(
+                    to_download_dict={url : download_target_path}
+                )
+                download_popup_dialog.exec()
+                k = download_target_path
+        else:
+            k = k.replace("$SELF$", my_dir)
+        return k
+
 
     def open_playlist(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Open playlist", "", "sjplay file (*.sjplay)")
@@ -117,7 +147,10 @@ class VjWinEventsMixin:
         with open(filename, "r", encoding="utf-8") as f:
             sjlist = json.load(f)
         for k, v in sjlist.items():
-            self.current_playlist.append((k, v))
+            my_dir = str(Path(filename).resolve().parent)
+            self.current_playlist.append(
+                (self._resolve_path_notation(k=k, my_dir=my_dir), self._resolve_path_notation(k=v, my_dir=my_dir))
+            )
 
 
     def save_playlist(self):
@@ -145,6 +178,9 @@ class VjWinEventsMixin:
     def toggle_video_muting(self):
         self.main_player_window_widget.mute_video(do_mute_video=self.do_mute_video_check.isChecked())
 
+    def toggle_audio_muting(self):
+        self.main_player_window_widget.mute_audio(do_mute_audio=self.do_mute_audio_check.isChecked())
+
     def set_mpv_player(self):
         if self.set_btn.text() == "Set":
             self.set_player()
@@ -171,6 +207,7 @@ class VjWinEventsMixin:
         self.main_player_window_widget.video_audio_outputer.setDevice(self.audio_devices_dict[self.audio_device_selection_combo.currentText()])
         self.main_player_window_widget.audio_audio_outputer.setDevice(self.audio_devices_dict[self.audio_device_selection_combo.currentText()])
         self.main_player_window_widget.do_mute_video = self.do_mute_video_check.isChecked()
+        self.main_player_window_widget.do_mute_audio = self.do_mute_audio_check.isChecked()
         self.play_btn.show(); self.play_btn.setEnabled(True)
         self.reload_and_play_btn.show(); self.reload_and_play_btn.setEnabled(True)
         self.pause_btn.show(); self.pause_btn.setEnabled(False)

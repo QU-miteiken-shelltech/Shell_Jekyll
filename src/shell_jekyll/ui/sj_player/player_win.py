@@ -14,7 +14,8 @@ class PlayerWin(QWidget):
     def __init__(self, 
                  playlist: list[tuple[str, str]] | None,
                  audio_channels: str="2.1",
-                 do_mute_video=True
+                 do_mute_video=True,
+                 do_mute_audio=False,
                  ):
         super().__init__()
         self.setWindowFlags(Qt.Window)
@@ -44,6 +45,7 @@ class PlayerWin(QWidget):
         self.playlist = playlist
         self.current_index = 0
         self.do_mute_video = do_mute_video
+        self.do_mute_audio = do_mute_audio
         self.norm_loudness_coe = {}
 
         self.media_timer = QTimer()
@@ -123,6 +125,10 @@ class PlayerWin(QWidget):
     def mute_video(self, do_mute_video: bool):
         self.do_mute_video = do_mute_video
         self.video_audio_outputer.setMuted(self.do_mute_video)
+
+    def mute_audio(self, do_mute_audio: bool):
+        self.do_mute_audio = do_mute_audio
+        self.audio_audio_outputer.setMuted(self.do_mute_audio)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:

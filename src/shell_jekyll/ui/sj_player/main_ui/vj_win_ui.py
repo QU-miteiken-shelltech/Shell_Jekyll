@@ -83,7 +83,7 @@ class VjWinUIMixin:
         go_to_editor_btn.setToolTip("Jekyll Editor へ")
         go_to_editor_btn.clicked.connect(self.go_to_editor)
         top_bar_lo.addWidget(go_to_editor_btn)
-        open_action_manager_btn = QPushButton("Action Manager")
+        open_action_manager_btn = QPushButton("Open Action Manager")
         open_action_manager_btn.setToolTip("アクションマネージャーへ")
         open_action_manager_btn.clicked.connect(
             ActionManagerDialog(
@@ -142,6 +142,10 @@ class VjWinUIMixin:
         delete_item_btn.setStyleSheet(_DANGER_BTN_STYLE)
         delete_item_btn.clicked.connect(self.delete_video_to_playlist)
         video_list_op_lo.addWidget(delete_item_btn)
+        explode_video_btn = QPushButton("Explode")
+        explode_video_btn.setToolTip("映像と音声を分離")
+        explode_video_btn.clicked.connect(self.explode_video)
+        video_list_op_lo.addWidget(explode_video_btn)
 
         video_list_op_lo.addSpacing(10)
 
@@ -227,6 +231,10 @@ class VjWinUIMixin:
         self.do_mute_video_check.setChecked(True)
         self.do_mute_video_check.checkStateChanged.connect(self.toggle_video_muting)
         option_checks_lo.addWidget(self.do_mute_video_check)
+        self.do_mute_audio_check = QCheckBox("Mute Audio")
+        self.do_mute_audio_check.setChecked(False)
+        self.do_mute_audio_check.checkStateChanged.connect(self.toggle_audio_muting)
+        option_checks_lo.addWidget(self.do_mute_audio_check)
         self.do_normalize_loudness_check = QCheckBox("Normalize loudness")
         self.do_normalize_loudness_check.setChecked(False)
         option_checks_lo.addWidget(self.do_normalize_loudness_check)

@@ -178,9 +178,7 @@ class ShellEqcorrectPlugin(QDialog):
         self.out_dir = out_dir
         self.out_dir_label.setText(f"Out : {self.out_dir}")
 
-    # ------------------------------------------------------------------
-    # ダウンロード（QNetworkAccessManager + 進捗バー）
-    # ------------------------------------------------------------------
+
     def download_exe(self):
         if self.download_reply is not None:
             return
@@ -216,7 +214,7 @@ class ShellEqcorrectPlugin(QDialog):
             self.download_progress.setRange(0, 100)
             self.download_progress.setValue(int(received * 100 / total))
         else:
-            self.download_progress.setRange(0, 0)  # サイズ不明ならビジー表示
+            self.download_progress.setRange(0, 0) 
 
     def _on_download_finished(self):
         reply = self.download_reply
@@ -233,7 +231,6 @@ class ShellEqcorrectPlugin(QDialog):
         if reply.error() != QNetworkReply.NetworkError.NoError:
             error_text = reply.errorString()
             reply.deleteLater()
-            # 中途半端なファイルは残さない
             try:
                 self.download_target_path.unlink(missing_ok=True)
             except OSError:
@@ -245,12 +242,9 @@ class ShellEqcorrectPlugin(QDialog):
         self.exe_path_label.setText(f"Executable path : {self.download_target_path}")
         self.executable_path = str(self.download_target_path)
 
-    # ------------------------------------------------------------------
-    # 実行（QProcess + スピナー）
-    # ------------------------------------------------------------------
     def exec_shell_eqcorrect(self):
         if self.process is not None:
-            return  # already running
+            return 
         if self.executable_path is None or not self.audio_file_paths \
                 or self.req_files_path is None or self.out_dir is None:
             return
