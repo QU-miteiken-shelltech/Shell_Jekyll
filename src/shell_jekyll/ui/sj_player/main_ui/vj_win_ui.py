@@ -142,10 +142,6 @@ class VjWinUIMixin:
         delete_item_btn.setStyleSheet(_DANGER_BTN_STYLE)
         delete_item_btn.clicked.connect(self.delete_video_to_playlist)
         video_list_op_lo.addWidget(delete_item_btn)
-        explode_video_btn = QPushButton("Explode")
-        explode_video_btn.setToolTip("映像と音声を分離")
-        explode_video_btn.clicked.connect(self.explode_video)
-        video_list_op_lo.addWidget(explode_video_btn)
 
         video_list_op_lo.addSpacing(10)
 
@@ -171,6 +167,19 @@ class VjWinUIMixin:
         open_playlist_btn.clicked.connect(self.open_playlist)
         video_list_op_lo.addWidget(open_playlist_btn)
         playlist_inner_lo.addLayout(video_list_op_lo)
+
+        video_list_op_2lo = QHBoxLayout()
+        video_list_op_2lo.setSpacing(6)
+
+        explode_video_btn = QPushButton("Explode")
+        explode_video_btn.setToolTip("映像と音声を分離")
+        explode_video_btn.clicked.connect(self.explode_video)
+        video_list_op_2lo.addWidget(explode_video_btn)
+        merge_audio_btn = QPushButton("Merge")
+        merge_audio_btn.setToolTip("音声を映像に取り込む")
+        merge_audio_btn.clicked.connect(self.merge_audio)
+        video_list_op_2lo.addWidget(merge_audio_btn)
+        playlist_inner_lo.addLayout(video_list_op_2lo)
 
         control_panel_lo.addWidget(playlist_group)
 

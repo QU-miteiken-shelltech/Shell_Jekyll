@@ -153,6 +153,8 @@ class ShellEqcorrectPlugin(QDialog):
             self.audio_file_label.setText(f"Audio : {self.audio_file_paths[0]} ,etc")
         elif len(self.audio_file_paths) == 1:
             self.audio_file_label.setText(f"Audio : {self.audio_file_paths[0]}")
+        self.out_dir = str(Path(self.audio_file_paths[0]).resolve().parent)
+        self.out_dir_label.setText(f"Out : {self.out_dir}")
 
     def open_audio_file(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Open an audio file", "", "Audio file (*)")

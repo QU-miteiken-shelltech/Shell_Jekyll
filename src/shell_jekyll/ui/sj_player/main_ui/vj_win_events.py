@@ -98,6 +98,16 @@ class VjWinEventsMixin:
             index=current_selected_index, item=new_item
         )
 
+    def merge_audio(self):
+        current_selected_index = self.video_list.currentRow()
+        new_item = AudioProcessing.merge_wav(
+            wav_audio_path=self.current_playlist[current_selected_index][1],
+            mov_movie_path=self.current_playlist[current_selected_index][0]
+        )
+        self.current_playlist.update(
+            index=current_selected_index, item=new_item
+        )
+
     def move_playlist_up(self):
         current_selected_index = self.video_list.currentRow()
         if current_selected_index <= 0:
