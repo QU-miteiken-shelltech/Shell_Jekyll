@@ -12,7 +12,6 @@ from shell_jekyll.ui.sj_player.player_win import PlayerWin
 
 from enum import StrEnum
 
-from shell_jekyll.ui.sj_player.vj_win_actionman import ActionManagerDialog
 from shell_jekyll.ui.sj_player.shift_dialog import GuardedListWidget
 
 class PlayMethods(StrEnum):
@@ -87,12 +86,7 @@ class VjWinUIMixin:
         top_bar_lo.addWidget(go_to_editor_btn)
         open_action_manager_btn = QPushButton("Open Action Manager")
         open_action_manager_btn.setToolTip("アクションマネージャーへ")
-        open_action_manager_btn.clicked.connect(
-            ActionManagerDialog(
-                parent=self,
-                player_widget=self.main_player_window_widget
-            ).exec
-        )
+        open_action_manager_btn.clicked.connect(self.open_manager_win)
         top_bar_lo.addWidget(open_action_manager_btn)
         open_ercorrect_btn = QPushButton("Open Shell EQcorrect")
         open_ercorrect_btn.setToolTip("Shell EQcorrect GUIツールを起動")

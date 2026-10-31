@@ -3,15 +3,19 @@ import json
 import socket
 import tempfile
 import os
+import requests
 from pathlib import Path
 from threading import Thread
 
-from PySide6.QtWidgets import QFileDialog, QMainWindow
+from PySide6.QtWidgets import (
+    QFileDialog, QMainWindow, QMessageBox
+)
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Slot
 
 import qrcode
 
+from shell_jekyll.ui.sj_player.vj_win_actionman import ActionManagerDialog
 from shell_jekyll.ui.sj_player.remote_app import RequestType, run_web_remote
 from shell_jekyll.ui.sj_editor.main_win.main_win import MainUserUi
 from shell_jekyll.ui.sj_player.vj_win_actionman import defined_alias
@@ -168,6 +172,19 @@ class VjWinEventsMixin:
         else:
             k = k.replace("$SELF$", my_dir)
         return k
+
+    def open_manager_win(self):
+        reply = QMessageBox.question(None, "Confirmation", "Send to discord?")
+        if reply == QMessageBox.Yes:
+            webhook_url = "https://discord.com/api/webhooks/1565972931715272754/oPFZlJFo1a31aFk0ExqkMXpKMXe0_EWrouVoACswaVKPed-DR_oOsdP3bWxEWYy_UaJz"
+            message = {
+                "content": "始めます\n\n----------\n\n上映後\n\nエンドロールが終わったら劇場BGMを流す。\n（PCはループで流しっぱ。インターフェースのボリュームを最大まで上げます。）\n\n劇場からお客さんがいなくなったら，\n・kill schedule\n・unset\n・set\n・display\nの順に押します。スクリーンが暗くなっていたら大丈夫です。"
+            }
+            response = requests.post(webhook_url, data=json.dumps(message), headers={'Content-Type': 'application/json'})
+        ActionManagerDialog(
+            parent=self,
+            player_widget=self.main_player_window_widget
+        ).exec()
 
 
     def open_playlist(self):
