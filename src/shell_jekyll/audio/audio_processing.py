@@ -7,6 +7,10 @@ from pathlib import Path
 
 import soundfile as sf
 
+# [Added] Containers accepted by ``explode_mov`` (compared case-insensitively).
+VIDEO_SUFFIXES = (".mov", ".mp4")
+
+
 class AudioProcessing:
     @classmethod
     def norm_loudness(cls, 
@@ -51,14 +55,18 @@ class AudioProcessing:
     def explode_mov(cls,
                     original_mov_path: str
                     ) -> tuple[str, str]:
-        if Path(original_mov_path).suffix != ".mov":
-            print("Only .mov supported")
+        # [Changed] Accept .mp4 as well as .mov (case-insensitive).  The original
+        # extension is kept for the backup name and for the video output, so a
+        # .mp4 stays a .mp4 and a .mov stays a .mov.
+        suffix = Path(original_mov_path).suffix
+        if suffix.lower() not in VIDEO_SUFFIXES:
+            print("Only .mov / .mp4 supported")
             return
         base_dir = Path(original_mov_path).resolve().parent
         base_name = Path(original_mov_path).stem
-        renamed_original_mov_path = base_dir / f"{base_name}_unsplitted.mov"
+        renamed_original_mov_path = base_dir / f"{base_name}_unsplitted{suffix}"
         os.rename(original_mov_path, renamed_original_mov_path)
-        splitted_video_out = base_dir / f"{base_name}.mov"
+        splitted_video_out = base_dir / f"{base_name}{suffix}"
         splitted_audio_out = base_dir / f"{base_name}.wav"
 
         try:
@@ -117,4 +125,3 @@ class AudioProcessing:
         subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         print(f"  └ Audio merged to movie as {mov_movie_path}")
         return (str(mov_movie_path), str(wav_audio_path))
-        
