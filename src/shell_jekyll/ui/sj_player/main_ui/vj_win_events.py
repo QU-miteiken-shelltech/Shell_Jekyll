@@ -249,10 +249,10 @@ class VjWinEventsMixin:
         else:
             self.main_player_window_widget.norm_loudness_coe = {}
         # [Changed] lock instead of WA_TransparentForMouseEvents so Shift+double-click still works
-        self.video_list.set_locked(True)
-        self.video_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.audio_list.set_locked(True)
-        self.audio_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.video_list.set_locked(True)
+        # self.video_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.audio_list.set_locked(True)
+        # self.audio_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.main_player_window_widget.playlist = list(self.current_playlist)
         self.main_player_window_widget.audio_channels = self.audio_channel_input.text().strip()
         self.main_player_window_widget.is_prepared = True
