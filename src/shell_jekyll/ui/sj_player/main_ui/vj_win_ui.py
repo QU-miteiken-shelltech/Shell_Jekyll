@@ -13,6 +13,7 @@ from shell_jekyll.ui.sj_player.player_win import PlayerWin
 from enum import StrEnum
 
 from shell_jekyll.ui.sj_player.vj_win_actionman import ActionManagerDialog
+from shell_jekyll.ui.sj_player.shift_dialog import GuardedListWidget
 
 class PlayMethods(StrEnum):
     MPV = "ffmpeg mpv (Default)"
@@ -63,6 +64,7 @@ class VjWinUIMixin:
         return group, inner_lo
 
     def _init_ui(self):
+        self._shift_dialog = None           # [Added] timing dialog (created on first Shift+double-click)
         main_lo = QHBoxLayout()
         main_lo.setContentsMargins(12, 12, 12, 12)
 
@@ -106,7 +108,8 @@ class VjWinUIMixin:
 
         video_col_lo = QVBoxLayout()
         video_col_lo.addWidget(QLabel("Video"))
-        self.video_list = QListWidget()
+        self.video_list = GuardedListWidget()      # [Changed] was QListWidget (Shift+double-click -> timing dialog)
+        self.video_list.shift_double_clicked.connect(lambda row: self.open_shift_dialog("video", row))
         self.video_list.clear()
         self.video_list.setMinimumHeight(140)
         self.current_playlist.video_list = self.video_list
@@ -116,7 +119,8 @@ class VjWinUIMixin:
 
         audio_col_lo = QVBoxLayout()
         audio_col_lo.addWidget(QLabel("Audio"))
-        self.audio_list = QListWidget()
+        self.audio_list = GuardedListWidget()      # [Changed] was QListWidget (Shift+double-click -> timing dialog)
+        self.audio_list.shift_double_clicked.connect(lambda row: self.open_shift_dialog("audio", row))
         self.audio_list.clear()
         self.audio_list.setMinimumHeight(140)
         self.current_playlist.audio_list = self.audio_list

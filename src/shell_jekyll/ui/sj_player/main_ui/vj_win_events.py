@@ -18,6 +18,22 @@ from shell_jekyll.ui.sj_player.vj_win_actionman import defined_alias
 from shell_jekyll.ui.sj_player.shell_eqcorrect import ShellEqcorrectPlugin
 from shell_jekyll.audio.audio_processing import AudioProcessing
 from shell_jekyll.ui.sj_player.download_popup import DownloadPopupDialog
+from shell_jekyll.ui.sj_player.shift_dialog import ShiftDialog
+
+
+class PlaylistEntry(tuple):
+    """[Added] ``(video_path, audio_path)`` plus per-material timing shifts (ms, not saved to disk).
+
+    Still a 2-tuple for every existing user (``x[0]``, ``x[1]``, unpacking, equality);
+    ``video_shift_ms`` / ``audio_shift_ms`` are extra attributes (+ = plays earlier).
+    """
+
+    def __new__(cls, video: str, audio: str, video_shift_ms: int = 0, audio_shift_ms: int = 0):
+        self = super().__new__(cls, (video, audio))
+        self.video_shift_ms = int(video_shift_ms)
+        self.audio_shift_ms = int(audio_shift_ms)
+        return self
+
 
 class PlayListObj(UserList):
     def __init__(self, initlist, video_list, audio_list):
@@ -26,6 +42,8 @@ class PlayListObj(UserList):
         self.audio_list = audio_list
 
     def append(self, item: tuple[str, str]):
+        if not isinstance(item, PlaylistEntry):         # [Changed] store as PlaylistEntry
+            item = PlaylistEntry(item[0], item[1])
         super().append(item)
         self.video_list.addItem(item[0])
         self.audio_list.addItem(item[1])
@@ -33,7 +51,9 @@ class PlayListObj(UserList):
     def update(self, index: int, item: tuple[str, str]):
         if index >= len(self):
             return
-        self[index] = item
+        old = self[index]                               # [Changed] keep the timing shifts of this slot
+        self[index] = PlaylistEntry(item[0], item[1],
+                                    getattr(old, "video_shift_ms", 0), getattr(old, "audio_shift_ms", 0))
         self.video_list.item(index).setText(item[0])
         self.audio_list.item(index).setText(item[1])
 
@@ -177,6 +197,28 @@ class VjWinEventsMixin:
 
         
 
+    def open_shift_dialog(self, kind: str, row: int):
+        """Shift+double-click on a list item: open the timing dialog for that material."""
+        if row < 0 or row >= len(self.current_playlist):
+            return
+        entry = self.current_playlist[row]
+        path = entry[0] if kind == "video" else entry[1]
+        if not path:
+            return                          # e.g. an item without audio: nothing to adjust
+        dlg = self._shift_dialog
+        if dlg is None:
+            dlg = ShiftDialog(self)
+            dlg.shift_applied.connect(self.apply_media_shift)
+            self._shift_dialog = dlg
+        dlg.retarget(entry, kind, path, current_ms=getattr(entry, f"{kind}_shift_ms", 0))
+        dlg.show()
+        dlg.raise_()
+        dlg.activateWindow()
+
+    def apply_media_shift(self, entry, kind: str, ms: int):
+        """Send the dialog's value to the player (re-aligns live if this item is loaded)."""
+        self.main_player_window_widget.change_shift(entry, kind, ms)
+
     def sync_audio_config_selection_to_video(self):
         current_selected_video_row = self.video_list.currentRow()
         self.audio_list.setCurrentRow(current_selected_video_row)
@@ -206,9 +248,10 @@ class VjWinEventsMixin:
             print(norm_coe_dict)
         else:
             self.main_player_window_widget.norm_loudness_coe = {}
-        self.video_list.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        # [Changed] lock instead of WA_TransparentForMouseEvents so Shift+double-click still works
+        self.video_list.set_locked(True)
         self.video_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.audio_list.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.audio_list.set_locked(True)
         self.audio_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.main_player_window_widget.playlist = list(self.current_playlist)
         self.main_player_window_widget.audio_channels = self.audio_channel_input.text().strip()
@@ -237,9 +280,9 @@ class VjWinEventsMixin:
 
     def unset_player(self):
         self.main_player_window_widget.pause_media()
-        self.video_list.setAttribute(Qt.WA_TransparentForMouseEvents, False)
+        self.video_list.set_locked(False)
         self.video_list.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
-        self.audio_list.setAttribute(Qt.WA_TransparentForMouseEvents, False)
+        self.audio_list.set_locked(False)
         self.audio_list.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         self.main_player_window_widget.playlist = []
         self.main_player_window_widget.is_prepared = False
@@ -272,7 +315,9 @@ class VjWinEventsMixin:
         if do_reload:
             self.main_player_window_widget.playlist = list(self.current_playlist)
             self.main_player_window_widget.set_media(index=None)
-            self.main_player_window_widget.audio_player.setPosition(int(self.shift_audio_forward_input.text()))
+            # [Changed] was: audio_player.setPosition(<box>).  Goes through the timeline so the
+            # per-material shifts are kept (identical result when they are 0).
+            self.main_player_window_widget.nudge_audio_start(int(self.shift_audio_forward_input.text()))
         self.play_btn.setEnabled(False)
         self.reload_and_play_btn.setEnabled(False)
         self.pause_btn.setEnabled(True)
