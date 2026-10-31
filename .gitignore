@@ -8,3 +8,4 @@ src/shell_jekyll/testPNGs/
 **/test/**
 **/*.prof
 test_video/**
+*.zip
