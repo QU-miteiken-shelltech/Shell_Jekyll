@@ -106,6 +106,10 @@ class ActionManagerDialog(QDialog):
         dialog_btns_lo.addWidget(open_btn)
         dialog_lo.addLayout(dialog_btns_lo)
 
+        self.execution_command = QLineEdit("")
+        self.execution_command.setPlaceholderText("Execution command")
+        dialog_lo.addWidget(self.execution_command)
+
         self.setLayout(dialog_lo)
 
     def add_action(self):
@@ -142,7 +146,17 @@ class ActionManagerDialog(QDialog):
 
     def execute_schedule(self):
         if not self.is_in_schedule:
-            self.iterator = iter([self.task_list.item(i).text() for i in range(self.task_list.count())])
+            schedules = [self.task_list.item(i).text() for i in range(self.task_list.count())]
+            execution_command = self.execution_command.text()
+            if execution_command.startswith("DO"):
+                repeat_range = execution_command.split(" ")[1].strip()
+                repeat_start = int(repeat_range.split("..")[0])
+                repeat_end = int(repeat_range.split("..")[1])
+                repeat_times = int(execution_command.split(" ")[3].strip())
+                schedules = schedules[0:repeat_start] + schedules[repeat_start:repeat_end+1] * repeat_times + schedules[repeat_end+1 : len(schedules)-1]
+            print(schedules)
+            self.iterator = iter(schedules)
+
             self.execute_btn.setText("Kill Schedule")
             self.is_in_schedule = True
             self.next_step()
