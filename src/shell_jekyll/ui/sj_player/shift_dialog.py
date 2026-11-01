@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 SHIFT_RANGE_MS = 60000          # dialog accepts -60000 .. +60000 ms
 STEP_BUTTONS = (-100, -10, -1, 1, 10, 100)
-KIND_LABEL = {"video": "映像 / Video", "audio": "音声 / Audio"}
+KIND_LABEL = {"video": "Video", "audio": "Audio"}
 
 
 class GuardedListWidget(QListWidget):
@@ -102,7 +102,7 @@ class ShiftDialog(QDialog):
         self.target_label = QLabel("")
         self.target_label.setWordWrap(True)
         lo.addWidget(self.target_label)
-        hint = QLabel("＋ = 早く再生（進める） / − = 遅れて再生（遅らせる）\n単位: ミリ秒 (ms)。Apply でプレイヤーに送ります。")
+        hint = QLabel("＋ = procedd / − = receed\nunit : ms. Apply to send to Player。")
         hint.setWordWrap(True)
         lo.addWidget(hint)
 
@@ -157,6 +157,6 @@ class ShiftDialog(QDialog):
     def _refresh_status(self, *_):
         v = int(self.spin.value())
         if v == self._applied_ms:
-            self.status_label.setText(f"プレイヤーに送信済み: {self._applied_ms:+d} ms")
+            self.status_label.setText(f"Sent: {self._applied_ms:+d} ms")
         else:
-            self.status_label.setText(f"未送信の変更あり（送信済み {self._applied_ms:+d} ms → 入力 {v:+d} ms）")
+            self.status_label.setText(f"Unsent edit detected (Sent {self._applied_ms:+d} ms → detected {v:+d} ms)")

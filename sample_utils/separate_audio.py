@@ -27,7 +27,6 @@ def separate_videos(folder_path):
                 subprocess.run(cmd_audio, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
                 print(f"  └ 音声保存完了: {audio_output.name}")
 
-                # 2. 映像のみをMOV（H.264 / 無音）に変換・抽出
                 cmd_video = [
                     "ffmpeg", "-y", "-i", str(file_path),
                     "-an", "-vcodec", "libx264", "-preset", "ultrafast", str(video_output)
