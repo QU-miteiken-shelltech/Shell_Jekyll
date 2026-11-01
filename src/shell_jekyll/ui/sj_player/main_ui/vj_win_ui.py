@@ -12,6 +12,7 @@ from shell_jekyll.ui.sj_player.player_win import PlayerWin
 
 from enum import StrEnum
 
+from shell_jekyll.ui.sj_player.vj_win_actionman import ActionManagerDialog
 from shell_jekyll.ui.sj_player.shift_dialog import GuardedListWidget
 
 class PlayMethods(StrEnum):
@@ -75,6 +76,10 @@ class VjWinUIMixin:
         self.main_player_window_widget.media_pos_changed_sig.connect(self.on_media_pos_changed)
         self.main_player_window_widget.playlist_index_changed_sig.connect(self.on_playlist_index_changed)
         # main_lo.addWidget(self.main_player_window_widget, stretch=2)
+        self.action_manager_dialog = ActionManagerDialog(
+            parent=self,
+            player_widget=self.main_player_window_widget
+        )
 
         control_panel_lo = QVBoxLayout()
         control_panel_lo.setSpacing(12)
